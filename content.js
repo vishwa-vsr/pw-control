@@ -93,18 +93,18 @@
     } catch (err) {}
   }
 
-  // Helper to render ticks HTML dynamically
-  function getSpeedControlTicksHTML(points) {
-    return points.map(pt => {
-      const pct = ((pt - 0.5) / 3.5) * 100;
-      return `<span class="pwc-tick-label" style="left: ${pct}%;">${pt.toFixed(1).replace(/\.0$/, '')}x</span>`;
-    }).join('');
-  }
-
-  // Dynamically redraw tick marks inside player UI
+  // Dynamically redraw tick marks inside player UI using safe DOM APIs
   function updatePlayerTicks(points) {
     document.querySelectorAll('.pwc-slider-ticks').forEach(ticksContainer => {
-      ticksContainer.innerHTML = getSpeedControlTicksHTML(points);
+      ticksContainer.textContent = '';
+      points.forEach(pt => {
+        const pct = ((pt - 0.5) / 3.5) * 100;
+        const tickLabel = document.createElement('span');
+        tickLabel.className = 'pwc-tick-label';
+        tickLabel.style.left = `${pct}%`;
+        tickLabel.textContent = `${pt.toFixed(1).replace(/\.0$/, '')}x`;
+        ticksContainer.appendChild(tickLabel);
+      });
     });
   }
 
@@ -511,27 +511,89 @@
     return null;
   }
 
-  // Get HTML template of the speedometer control
-  function getSpeedControlHTML() {
-    const ticksHTML = getSpeedControlTicksHTML(snapPoints);
-    return `
-      <button class="pwc-speed-btn" type="button" title="Playback Speed">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M6 18A8 8 0 1 1 18 18" />
-          <line class="pwc-needle" x1="12" y1="14" x2="15" y2="9" style="transform-origin: 12px 14px; transition: transform 0.12s cubic-bezier(0.4, 0, 0.2, 1);" />
-          <circle cx="12" cy="14" r="1.5" fill="currentColor" />
-        </svg>
-        <span class="pwc-speed-badge">${currentSpeed.toFixed(1)}x</span>
-      </button>
-      <div class="pwc-speed-slider-container">
-        <div class="pwc-slider-wrapper">
-          <input type="range" class="pwc-speed-slider" min="0.5" max="4.0" step="0.1" value="${currentSpeed}">
-          <div class="pwc-slider-ticks">
-            ${ticksHTML}
-          </div>
-        </div>
-      </div>
-    `;
+  // Programmatically construct the speedometer control without innerHTML
+  function buildSpeedControl(container) {
+    container.textContent = '';
+
+    // Create button
+    const btn = document.createElement('button');
+    btn.className = 'pwc-speed-btn';
+    btn.type = 'button';
+    btn.setAttribute('title', 'Playback Speed');
+
+    // Create SVG using document.createElementNS for SVGs
+    const svgNS = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(svgNS, 'svg');
+    svg.setAttribute('viewBox', '0 0 24 24');
+    svg.setAttribute('fill', 'none');
+    svg.setAttribute('stroke', 'currentColor');
+    svg.setAttribute('stroke-width', '2.2');
+    svg.setAttribute('stroke-linecap', 'round');
+    svg.setAttribute('stroke-linejoin', 'round');
+
+    const path = document.createElementNS(svgNS, 'path');
+    path.setAttribute('d', 'M6 18A8 8 0 1 1 18 18');
+    svg.appendChild(path);
+
+    const line = document.createElementNS(svgNS, 'line');
+    line.setAttribute('class', 'pwc-needle');
+    line.setAttribute('x1', '12');
+    line.setAttribute('y1', '14');
+    line.setAttribute('x2', '15');
+    line.setAttribute('y2', '9');
+    line.style.transformOrigin = '12px 14px';
+    line.style.transition = 'transform 0.12s cubic-bezier(0.4, 0, 0.2, 1)';
+    svg.appendChild(line);
+
+    const circle = document.createElementNS(svgNS, 'circle');
+    circle.setAttribute('cx', '12');
+    circle.setAttribute('cy', '14');
+    circle.setAttribute('r', '1.5');
+    circle.setAttribute('fill', 'currentColor');
+    svg.appendChild(circle);
+
+    btn.appendChild(svg);
+
+    // Create badge
+    const badge = document.createElement('span');
+    badge.className = 'pwc-speed-badge';
+    badge.textContent = `${currentSpeed.toFixed(1)}x`;
+    btn.appendChild(badge);
+
+    container.appendChild(btn);
+
+    // Create slider container
+    const sliderContainer = document.createElement('div');
+    sliderContainer.className = 'pwc-speed-slider-container';
+
+    const sliderWrapper = document.createElement('div');
+    sliderWrapper.className = 'pwc-slider-wrapper';
+
+    const input = document.createElement('input');
+    input.type = 'range';
+    input.className = 'pwc-speed-slider';
+    input.min = '0.5';
+    input.max = '4.0';
+    input.step = '0.1';
+    input.value = currentSpeed;
+    sliderWrapper.appendChild(input);
+
+    const ticks = document.createElement('div');
+    ticks.className = 'pwc-slider-ticks';
+    
+    // Add ticks dynamically
+    snapPoints.forEach(pt => {
+      const pct = ((pt - 0.5) / 3.5) * 100;
+      const tickLabel = document.createElement('span');
+      tickLabel.className = 'pwc-tick-label';
+      tickLabel.style.left = `${pct}%`;
+      tickLabel.textContent = `${pt.toFixed(1).replace(/\.0$/, '')}x`;
+      ticks.appendChild(tickLabel);
+    });
+
+    sliderWrapper.appendChild(ticks);
+    sliderContainer.appendChild(sliderWrapper);
+    container.appendChild(sliderContainer);
   }
 
   // Inject floating widget directly inside the player's controls container
@@ -543,7 +605,7 @@
         const container = document.createElement('div');
         container.id = 'pwc-speed-control';
         container.className = 'pwc-speed-container';
-        container.innerHTML = getSpeedControlHTML();
+        buildSpeedControl(container);
 
         if (footerRight.firstChild) {
           footerRight.insertBefore(container, footerRight.firstChild);
@@ -574,7 +636,7 @@
           const container = document.createElement('div');
           container.id = 'pwc-speed-control';
           container.className = 'pwc-speed-container';
-          container.innerHTML = getSpeedControlHTML();
+          buildSpeedControl(container);
 
           if (parent.firstChild) {
             parent.insertBefore(container, parent.firstChild);
@@ -594,7 +656,7 @@
     }
   }
 
-  // Display a visual speed toast overlay inside the player on change
+  // Display a visual speed toast overlay inside the player on change using safe DOM APIs
   function showSpeedToast(speed) {
     const video = getActiveVideo();
     if (!video) return;
@@ -609,14 +671,40 @@
       playerContainer.appendChild(toast);
     }
 
-    toast.innerHTML = `
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M6 18A8 8 0 1 1 18 18" />
-        <line x1="12" y1="14" x2="15" y2="9" />
-        <circle cx="12" cy="14" r="1.5" fill="currentColor" />
-      </svg>
-      <span>${speed.toFixed(1)}x</span>
-    `;
+    toast.textContent = '';
+
+    const svgNS = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(svgNS, 'svg');
+    svg.setAttribute('viewBox', '0 0 24 24');
+    svg.setAttribute('fill', 'none');
+    svg.setAttribute('stroke', 'currentColor');
+    svg.setAttribute('stroke-width', '2.2');
+    svg.setAttribute('stroke-linecap', 'round');
+    svg.setAttribute('stroke-linejoin', 'round');
+
+    const path = document.createElementNS(svgNS, 'path');
+    path.setAttribute('d', 'M6 18A8 8 0 1 1 18 18');
+    svg.appendChild(path);
+
+    const line = document.createElementNS(svgNS, 'line');
+    line.setAttribute('x1', '12');
+    line.setAttribute('y1', '14');
+    line.setAttribute('x2', '15');
+    line.setAttribute('y2', '9');
+    svg.appendChild(line);
+
+    const circle = document.createElementNS(svgNS, 'circle');
+    circle.setAttribute('cx', '12');
+    circle.setAttribute('cy', '14');
+    circle.setAttribute('r', '1.5');
+    circle.setAttribute('fill', 'currentColor');
+    svg.appendChild(circle);
+
+    toast.appendChild(svg);
+
+    const span = document.createElement('span');
+    span.textContent = `${speed.toFixed(1)}x`;
+    toast.appendChild(span);
 
     if (toastTimeout) {
       clearTimeout(toastTimeout);

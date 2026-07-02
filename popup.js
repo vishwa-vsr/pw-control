@@ -92,7 +92,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function updateTicksAndPresets(points) {
     const ticksRow = document.querySelector('.ticks-row');
     if (ticksRow) {
-      ticksRow.innerHTML = '';
+      ticksRow.textContent = '';
       points.forEach(pt => {
         // Calculate slider left percentage position (min: 0.5, max: 4.0, range: 3.5)
         const pct = ((pt - 0.5) / 3.5) * 100;

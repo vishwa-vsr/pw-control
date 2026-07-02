@@ -27,7 +27,8 @@ SKIP = {
     "build.py", "node_modules", "package.json", "package-lock.json", 
     ".git", ".gitignore", "__pycache__", "project_rules.md", 
     "design.md", "README.md", "pw-dist", "pw-firefox", "backup",
-    "PW Video Player.html", "PW Video Player_files", "promo-posters", ".agents"
+    "PW Video Player.html", "PW Video Player_files", "promo-posters", ".agents",
+    "LICENSE", "CHANGELOG.md", "PRIVACY_POLICY.md"
 }
 
 
@@ -299,10 +300,15 @@ def build_target(target_name, is_firefox=False):
                     ]
                     del manifest["background"]["service_worker"]
                 
-                # Add Gecko ID
+                # Add Gecko ID and data collection disclosure
                 manifest["browser_specific_settings"] = {
                     "gecko": {
-                        "id": "pw-control@visha.dev"
+                        "id": "pw-control@visha.dev",
+                        "data_collection_permissions": {
+                            "required": [
+                                "none"
+                            ]
+                        }
                     }
                 }
                 
@@ -522,7 +528,7 @@ if __name__ == "__main__":
                         if any(x in root for x in SKIP) or "__pycache__" in root:
                             continue
                         for file in files:
-                            if file.endswith(".zip"):
+                            if file.endswith(".zip") or file in SKIP:
                                 continue
                             abs_p = os.path.join(root, file)
                             rel_p = os.path.relpath(abs_p, SRC_DIR)
