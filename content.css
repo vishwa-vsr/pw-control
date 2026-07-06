@@ -106,7 +106,7 @@
   width: 11px;
   height: 11px;
   border-radius: 50%;
-  background: #7c3aed;
+  background: #5a4bda;
   border: none;
   transition: transform 0.1s ease;
   cursor: pointer;
@@ -121,7 +121,7 @@
   width: 11px;
   height: 11px;
   border-radius: 50%;
-  background: #7c3aed;
+  background: #5a4bda;
   border: none;
   transition: transform 0.1s ease;
   cursor: pointer;
@@ -156,8 +156,8 @@
 
 /* Active snap point tick highlight */
 .pwc-tick-label.pwc-active-tick {
-  color: #a855f7;
-  text-shadow: 0 0 4px rgba(168, 85, 247, 0.6);
+  color: #5a4bda;
+  text-shadow: 0 0 4px rgba(90, 75, 218, 0.6);
 }
 
 /* Premium Visual Speed Toast Overlay Notification */
@@ -193,7 +193,7 @@
 .pwc-speed-toast svg {
   width: 28px;
   height: 28px;
-  stroke: #a855f7;
+  stroke: #5a4bda;
   fill: none;
 }
 
@@ -220,6 +220,36 @@ html.pwc-hide-cc .vjs-icon-subtitles {
 
 /* --- Hide Speed Widget: our own injected control + native speed badges --- */
 html.pwc-hide-speed #pwc-speed-control {
+  display: none !important;
+}
+
+/* --- Hide Settings Icon: VideoJS setting icon or any gear/quality controls --- */
+html.pwc-hide-setting #setting-icon,
+html.pwc-hide-setting [id*="setting-icon"],
+html.pwc-hide-setting .vjs-setting-button,
+html.pwc-hide-setting .vjs-setting-menu,
+html.pwc-hide-setting [class*="setting-icon"],
+html.pwc-hide-setting [class*="gear-icon"] {
+  display: none !important;
+}
+
+/* --- Hide Time Line: VideoJS progress control / seek bar --- */
+html.pwc-hide-timeline .vjs-progress-control,
+html.pwc-hide-timeline .vjs-progress-holder,
+html.pwc-hide-timeline .vjs-play-progress,
+html.pwc-hide-timeline [class*="progress-control"],
+html.pwc-hide-timeline [class*="progress-bar"]:not(.pwc-speed-container):not(.pwc-speed-slider-container),
+html.pwc-hide-timeline [class*="seekbar"],
+html.pwc-hide-timeline [class*="seek-bar"] {
+  display: none !important;
+}
+
+/* --- Hide Time Text: VideoJS current time, duration, divider, remaining time --- */
+html.pwc-hide-timetext .vjs-current-time,
+html.pwc-hide-timetext .vjs-duration,
+html.pwc-hide-timetext .vjs-time-divider,
+html.pwc-hide-timetext .vjs-remaining-time,
+html.pwc-hide-timetext .vjs-time-control {
   display: none !important;
 }
 

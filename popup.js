@@ -18,13 +18,19 @@ document.addEventListener('DOMContentLoaded', () => {
     hideChat: document.getElementById('hide-chat-toggle'),
     hideNotes: document.getElementById('hide-notes-toggle'),
     hideCC: document.getElementById('hide-cc-toggle'),
-    hideSpeed: document.getElementById('hide-speed-toggle')
+    hideSpeed: document.getElementById('hide-speed-toggle'),
+    hideSetting: document.getElementById('hide-setting-toggle'),
+    hideTimeLine: document.getElementById('hide-timeline-toggle'),
+    hideTimeText: document.getElementById('hide-timetext-toggle')
   };
 
   const customToggles = {
     disableHotkeys: document.getElementById('disable-hotkeys-toggle'),
-    disableScroll: document.getElementById('disable-scroll-toggle')
+    disableScroll: document.getElementById('disable-scroll-toggle'),
+    holdSpaceSpeedUp: document.getElementById('hold-space-toggle')
   };
+
+  const holdSpaceSpeedInput = document.getElementById('hold-space-speed');
 
   const keyInputs = {
     keySpeedUp: document.getElementById('key-speedup'),
@@ -153,9 +159,19 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // Retrieve current configurations from local storage
+  const holdSpaceConfigRow = document.getElementById('hold-space-config-row');
+  function toggleHoldSpaceConfig(isDisabled) {
+    if (holdSpaceConfigRow) {
+      if (isDisabled) {
+        holdSpaceConfigRow.classList.add('disabled');
+      } else {
+        holdSpaceConfigRow.classList.remove('disabled');
+      }
+    }
+  }
+
   safeStorageGet(
-    ['preferredSpeed', 'hideAskAI', 'hideDoubt', 'hideChat', 'hideNotes', 'hideCC', 'hideSpeed', 'disableHotkeys', 'disableScroll', 'keySpeedUp', 'keySlowDown', 'keyReset', 'snapPoints'],
+    ['preferredSpeed', 'hideAskAI', 'hideDoubt', 'hideChat', 'hideNotes', 'hideCC', 'hideSpeed', 'hideSetting', 'hideTimeLine', 'hideTimeText', 'disableHotkeys', 'disableScroll', 'holdSpaceSpeedUp', 'holdSpaceSpeed', 'keySpeedUp', 'keySlowDown', 'keyReset', 'snapPoints'],
     (result) => {
       // Load focus toggles
       for (const key in toggles) {
@@ -171,6 +187,13 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       if (customToggles.disableScroll) {
         customToggles.disableScroll.checked = !!result.disableScroll;
+      }
+      if (customToggles.holdSpaceSpeedUp) {
+        customToggles.holdSpaceSpeedUp.checked = !!result.holdSpaceSpeedUp;
+        toggleHoldSpaceConfig(!result.holdSpaceSpeedUp);
+      }
+      if (holdSpaceSpeedInput) {
+        holdSpaceSpeedInput.value = result.holdSpaceSpeed !== undefined ? parseFloat(result.holdSpaceSpeed).toFixed(1) : "2.0";
       }
 
       // Load custom snap points
@@ -222,9 +245,25 @@ document.addEventListener('DOMContentLoaded', () => {
         if (key === 'disableHotkeys') {
           toggleEditorState(isChecked);
         }
+        if (key === 'holdSpaceSpeedUp') {
+          toggleHoldSpaceConfig(!isChecked);
+        }
         safeStorageSet({ [key]: isChecked });
       });
     }
+  }
+
+  // Bind interactive hold space custom speed rate changes
+  if (holdSpaceSpeedInput) {
+    holdSpaceSpeedInput.addEventListener('change', () => {
+      let val = parseFloat(holdSpaceSpeedInput.value);
+      if (isNaN(val) || val < 1.1 || val > 4.0) {
+        val = 2.0;
+      }
+      val = Math.round(val * 10) / 10;
+      holdSpaceSpeedInput.value = val.toFixed(1);
+      safeStorageSet({ holdSpaceSpeed: val });
+    });
   }
 
   // Bind interactive snap point input changes
@@ -326,6 +365,20 @@ document.addEventListener('DOMContentLoaded', () => {
       } else {
         presetsEditorContainer.classList.add('expanded');
         settingsToggleBtn.setAttribute('aria-expanded', 'true');
+      }
+    });
+  }
+
+  // Handle external links opening in a new tab
+  const githubLink = document.querySelector('.github-link');
+  if (githubLink) {
+    githubLink.addEventListener('click', (e) => {
+      e.preventDefault();
+      const url = githubLink.getAttribute('href');
+      if (typeof chrome !== 'undefined' && chrome.tabs && chrome.tabs.create) {
+        chrome.tabs.create({ url: url });
+      } else {
+        window.open(url, '_blank');
       }
     });
   }

@@ -13,6 +13,13 @@
   let keyReset = 'r';
   let snapPoints = [1.0, 2.0, 3.0, 4.0];
 
+  // Hold Space to Speed Up configuration
+  let holdSpaceSpeedUp = false;
+  let holdSpaceSpeed = 2.0;
+  let spacePressTimer = null;
+  let isHoldingSpace = false;
+  let speedBeforeHold = 1.0;
+
   // Helper to step speed up or down by 0.1, clamped to 0.5–4.0
   function stepSpeed(direction) {
     let val = direction > 0
@@ -48,7 +55,10 @@
     hideChat: 'pwc-hide-chat',
     hideNotes: 'pwc-hide-notes',
     hideCC: 'pwc-hide-cc',
-    hideSpeed: 'pwc-hide-speed'
+    hideSpeed: 'pwc-hide-speed',
+    hideSetting: 'pwc-hide-setting',
+    hideTimeLine: 'pwc-hide-timeline',
+    hideTimeText: 'pwc-hide-timetext'
   };
 
   // Hiding toggle states
@@ -58,7 +68,10 @@
     hideChat: false,
     hideNotes: false,
     hideCC: false,
-    hideSpeed: false
+    hideSpeed: false,
+    hideSetting: false,
+    hideTimeLine: false,
+    hideTimeText: false
   };
 
   // Helper to safely access chrome storage without throwing context invalidated exceptions
@@ -68,7 +81,7 @@
     }
     try {
       chrome.storage.local.get(
-        ['preferredSpeed', 'hideAskAI', 'hideDoubt', 'hideChat', 'hideNotes', 'hideCC', 'hideSpeed', 'disableHotkeys', 'disableScroll', 'keySpeedUp', 'keySlowDown', 'keyReset', 'snapPoints'], 
+        ['preferredSpeed', 'hideAskAI', 'hideDoubt', 'hideChat', 'hideNotes', 'hideCC', 'hideSpeed', 'hideSetting', 'hideTimeLine', 'hideTimeText', 'disableHotkeys', 'disableScroll', 'holdSpaceSpeedUp', 'holdSpaceSpeed', 'keySpeedUp', 'keySlowDown', 'keyReset', 'snapPoints'], 
         function (result) {
           try {
             if (chrome.runtime && chrome.runtime.id) {
@@ -122,6 +135,8 @@
 
     disableHotkeys = !!result.disableHotkeys;
     disableScroll = !!result.disableScroll;
+    holdSpaceSpeedUp = !!result.holdSpaceSpeedUp;
+    holdSpaceSpeed = result.holdSpaceSpeed !== undefined ? parseFloat(result.holdSpaceSpeed) : 2.0;
     keySpeedUp = result.keySpeedUp || '>';
     keySlowDown = result.keySlowDown || '<';
     keyReset = result.keyReset || 'r';
@@ -155,6 +170,12 @@
             }
             if (changes.hasOwnProperty('disableScroll')) {
               disableScroll = !!changes.disableScroll.newValue;
+            }
+            if (changes.hasOwnProperty('holdSpaceSpeedUp')) {
+              holdSpaceSpeedUp = !!changes.holdSpaceSpeedUp.newValue;
+            }
+            if (changes.hasOwnProperty('holdSpaceSpeed')) {
+              holdSpaceSpeed = changes.holdSpaceSpeed.newValue !== undefined ? parseFloat(changes.holdSpaceSpeed.newValue) : 2.0;
             }
             if (changes.hasOwnProperty('keySpeedUp')) {
               keySpeedUp = changes.keySpeedUp.newValue;
@@ -719,6 +740,114 @@
     }, 800);
   }
 
+  // Helper to find the video timeline progress bar
+  function findTimeline() {
+    const video = getActiveVideo();
+    if (!video) return null;
+    const playerContainer = document.getElementById('video-player-container') || video.closest('.video-player-app') || video.parentElement;
+    if (!playerContainer) return null;
+    const el = playerContainer.querySelector(
+      '.vjs-progress-control, .vjs-progress-holder, ' +
+      '[class*="progress-control" i], [class*="progress-bar" i], ' +
+      '[class*="seekbar" i], [class*="seek-bar" i]'
+    );
+    if (el) {
+      const className = el.getAttribute('class') || '';
+      if (className.includes('pwc-')) return null;
+      return el;
+    }
+    return null;
+  }
+
+  // Helper to find video time and duration texts
+  function findTimeTexts() {
+    const video = getActiveVideo();
+    if (!video) return [];
+    const playerContainer = document.getElementById('video-player-container') || video.closest('.video-player-app') || video.parentElement;
+    if (!playerContainer) return [];
+    
+    const elements = playerContainer.querySelectorAll(
+      '.vjs-current-time, .vjs-duration, .vjs-time-divider, .vjs-remaining-time, .vjs-time-control, ' +
+      '[class*="time-display" i], [class*="time-text" i], ' +
+      '[class*="current-time" i], [class*="duration" i], [class*="video-time" i], ' +
+      '.current-time, .duration, .time-display, .time-text'
+    );
+
+    return Array.from(elements).filter(el => {
+      // 1. Exclude our own extension's speedometer UI elements
+      const className = el.getAttribute('class') || '';
+      const id = el.id || '';
+      if (className.includes('pwc-') || id.includes('pwc-')) {
+        return false;
+      }
+
+      // 2. Exclude elements that contain interactive buttons or SVGs
+      // (Time texts are flat labels; they don't contain button icons or setting controls)
+      if (el.querySelector('button') || el.querySelector('svg') || el.querySelector('[role="button"]')) {
+        return false;
+      }
+
+      // 3. Exclude major layout/wrapper sections (we only want the leaf labels)
+      if (el.querySelectorAll('div').length > 5) {
+        return false;
+      }
+
+      // 4. Ensure it contains actual time numbers (e.g. "0:00", "2:31", "/ 2:06:36")
+      // or it is a specific VideoJS time class
+      const text = (el.textContent || '').trim();
+      const isVjsTime = className.includes('vjs-current-time') || 
+                        className.includes('vjs-duration') || 
+                        className.includes('vjs-time-divider') || 
+                        className.includes('vjs-remaining-time') || 
+                        className.includes('vjs-time-control');
+
+      if (isVjsTime) {
+        return true;
+      }
+
+      // If it's a generic element, it must have text matching digit:digit or divider
+      const hasTimePattern = /^\s*[\d\s:\-/|]+\s*$/.test(text) && /\d+:\d+/.test(text);
+      const isDivider = text === '/' || text === '|' || text === '-';
+
+      return hasTimePattern || isDivider;
+    });
+  }
+
+  // Helper to hide separators (like "/" text nodes or span dividers) next to time elements
+  function hideTimeSeparators(timeElement, shouldHide) {
+    if (!timeElement) return;
+    const parent = timeElement.parentElement;
+    if (!parent) return;
+
+    const childNodes = Array.from(parent.childNodes);
+    childNodes.forEach(node => {
+      if (node.nodeType === 3) { // Text Node
+        const text = node.textContent.trim();
+        if (text === '/' || text === '|' || text === '-') {
+          if (shouldHide) {
+            if (node.originalText === undefined) {
+              node.originalText = node.textContent;
+            }
+            node.textContent = '';
+          } else {
+            if (node.originalText !== undefined) {
+              node.textContent = node.originalText;
+            }
+          }
+        }
+      } else if (node.nodeType === 1) { // Element Node
+        const text = node.textContent.trim();
+        const className = node.getAttribute('class') || '';
+        const id = node.id || '';
+        const isSelf = className.includes('pwc-') || id.includes('pwc-');
+        
+        if (!isSelf && (text === '/' || text === '|' || text === '-')) {
+          setHidden(node, shouldHide);
+        }
+      }
+    });
+  }
+
   // Hide or restore distracting elements depending on settings.
   // We use a unified, robust settings-offset positional mapping to identify toolbar buttons,
   // falling back to attribute classification. This is highly reliable across all browsers.
@@ -726,6 +855,9 @@
     const video = getActiveVideo();
     if (video) {
       const settingsBtn = findSettingsButton();
+      if (settingsBtn) {
+        setHidden(settingsBtn, hideSettings.hideSetting);
+      }
       const fullscreenBtn = findFullscreenButton();
       const refBtn = settingsBtn || fullscreenBtn;
 
@@ -816,6 +948,19 @@
         setHidden(el, false);
       }
     }
+
+    // Handle timeline hiding
+    const timeline = findTimeline();
+    if (timeline) {
+      setHidden(timeline, hideSettings.hideTimeLine);
+    }
+
+    // Handle time display texts hiding
+    const timeTexts = findTimeTexts();
+    timeTexts.forEach(el => {
+      setHidden(el, hideSettings.hideTimeText);
+      hideTimeSeparators(el, hideSettings.hideTimeText);
+    });
   }
 
   // Set the playback speed on the video element
@@ -965,7 +1110,109 @@
     return event.key.toLowerCase() === targetKey.toLowerCase();
   }
 
-  // Listen to keyboard shortcuts
+  // Helper to toggle play/pause natively through player controls
+  function togglePlayPause() {
+    const video = getActiveVideo();
+    if (!video) return;
+    const playerContainer = document.getElementById('video-player-container') || video.closest('.video-player-app') || video.parentElement;
+    if (playerContainer) {
+      const playBtn = playerContainer.querySelector('.vjs-play-control, [class*="play-control" i], [class*="play-btn" i], .play-btn, .vjs-play-btn');
+      if (playBtn) {
+        playBtn.click();
+        return;
+      }
+    }
+    // Fallback 1: Toggle via HTML5 video API
+    try {
+      if (video.paused) {
+        video.play();
+      } else {
+        video.pause();
+      }
+    } catch (e) {
+      // Fallback 2: click the video element
+      video.click();
+    }
+  }
+
+  // Set temporary speed without saving it permanently to storage
+  function applyTemporarySpeed(speed) {
+    currentSpeed = speed;
+    const video = getActiveVideo();
+    if (video) {
+      if (video.playbackRate !== speed) {
+        isSettingRate = true;
+        video.playbackRate = speed;
+        setTimeout(() => {
+          isSettingRate = false;
+        }, 50);
+      }
+    }
+    updateUI();
+    showSpeedToast(speed);
+  }
+
+  // Dedicated capture-phase Spacebar interceptors to prevent double-toggling
+  document.addEventListener('keydown', (e) => {
+    if (e.key !== ' ' && e.code !== 'Space') return;
+    
+    // Safety check: Ignore if typing
+    const active = document.activeElement;
+    if (active) {
+      const tagName = active.tagName.toLowerCase();
+      if (tagName === 'input' || tagName === 'textarea' || active.isContentEditable || active.getAttribute('role') === 'textbox') {
+        return;
+      }
+    }
+
+    if (holdSpaceSpeedUp) {
+      e.preventDefault();
+      e.stopPropagation();
+      e.stopImmediatePropagation();
+      
+      if (isHoldingSpace) return;
+      if (!spacePressTimer) {
+        speedBeforeHold = currentSpeed;
+        spacePressTimer = setTimeout(() => {
+          isHoldingSpace = true;
+          applyTemporarySpeed(holdSpaceSpeed);
+        }, 300);
+      }
+    }
+  }, true); // useCapture = true
+
+  document.addEventListener('keyup', (e) => {
+    if (e.key !== ' ' && e.code !== 'Space') return;
+
+    // Safety check: Ignore if typing
+    const active = document.activeElement;
+    if (active) {
+      const tagName = active.tagName.toLowerCase();
+      if (tagName === 'input' || tagName === 'textarea' || active.isContentEditable || active.getAttribute('role') === 'textbox') {
+        return;
+      }
+    }
+
+    if (holdSpaceSpeedUp) {
+      e.preventDefault();
+      e.stopPropagation();
+      e.stopImmediatePropagation();
+
+      if (spacePressTimer) {
+        clearTimeout(spacePressTimer);
+        spacePressTimer = null;
+      }
+
+      if (isHoldingSpace) {
+        applyTemporarySpeed(speedBeforeHold);
+        isHoldingSpace = false;
+      } else {
+        togglePlayPause();
+      }
+    }
+  }, true); // useCapture = true
+
+  // Listen to keyboard shortcuts (bubble phase)
   document.addEventListener('keydown', (e) => {
     if (disableHotkeys) return;
 

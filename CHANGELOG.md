@@ -6,6 +6,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ---
 
+## [1.0.1] - 2026-07-06
+
+### Added
+- **Hold Space to Speed Up**: Press and hold Spacebar to temporarily play at a custom speed (default `2.0x`). Releasing restores original speed. Custom rate is configurable in the popup Speed tab.
+- **Hide Settings Gear Icon**: Option to hide the player settings/quality gear icon.
+- **Hide Timeline Line**: Option to hide the horizontal seek/progress bar.
+- **Hide Time Text**: Option to hide the duration, elapsed time, and remaining time display.
+- **GitHub Repository Link**: Added a direct GitHub link in the footer.
+
+### Changed
+- **UI/UX Rebrand**: Updated design language to match the new Physics Wallah study portal (`study-v2/study`) using its signature Royal Blue (`#5A4BDA`) and obsidian slate-dark card layouts.
+- **Minimalist Header**: Removed header subtitle and stripped the stroke/shadow frame around the logo, centering it at `32px`.
+- **Footer Realignment**: Removed the "Focus Command Panel" text and aligned the GitHub link to the far-left and version display (`v1.0.1`) to the far-right.
+
+### Fixed
+- **Slash Separator Bug**: Resolved the layout bug where raw text slashes (`/`) remained visible when time text was disabled.
+- **Space Double-Toggle Bug**: Resolved a race condition where tapping Space caused the video to play/pause for a microsecond by using capture-phase event listeners to isolate Spacebar interactions from page scripts.
+
+---
+
 ## [1.0.0] - 2026-07-02
 
 ### Added

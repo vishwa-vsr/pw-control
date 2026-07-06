@@ -23,7 +23,6 @@
       </div>
       <div class="title-wrapper">
         <h1 class="header-title">pw control</h1>
-        <span class="header-subtitle">Focus & speed command</span>
       </div>
     </header>
 
@@ -146,6 +145,24 @@
                 <span class="switch-slider"></span>
               </label>
             </div>
+
+            <!-- Toggle 3: Hold Space to Speed Up -->
+            <div class="feature-card">
+              <div class="feature-info">
+                <label for="hold-space-toggle" class="feature-title">Hold Space to Speed Up</label>
+                <span class="feature-desc">Hold Space key to temporarily play at custom speed.</span>
+              </div>
+              <label class="switch" aria-label="Toggle Hold Space to Speed Up">
+                <input type="checkbox" id="hold-space-toggle">
+                <span class="switch-slider"></span>
+              </label>
+            </div>
+
+            <!-- Hold Space Speed Configuration -->
+            <div class="feature-config-row" id="hold-space-config-row">
+              <span class="config-label">Speed Up Rate</span>
+              <input type="number" id="hold-space-speed" class="preset-edit-input" min="1.1" max="4.0" step="0.1" value="2.0">
+            </div>
           </div>
         </section>
       </div>
@@ -228,13 +245,55 @@
                 <span class="switch-slider"></span>
               </label>
             </div>
+
+            <!-- Option 6: Hide Settings Icon -->
+            <div class="feature-card">
+              <div class="feature-info">
+                <label for="hide-setting-toggle" class="feature-title">Disable Settings Icon</label>
+                <span class="feature-desc">Hide the video settings gear icon.</span>
+              </div>
+              <label class="switch" aria-label="Toggle Hide Settings Icon">
+                <input type="checkbox" id="hide-setting-toggle">
+                <span class="switch-slider"></span>
+              </label>
+            </div>
+
+            <!-- Option 7: Hide Horizontal Timeline -->
+            <div class="feature-card">
+              <div class="feature-info">
+                <label for="hide-timeline-toggle" class="feature-title">Disable Timeline Line</label>
+                <span class="feature-desc">Hide the horizontal line of time.</span>
+              </div>
+              <label class="switch" aria-label="Toggle Hide Timeline Line">
+                <input type="checkbox" id="hide-timeline-toggle">
+                <span class="switch-slider"></span>
+              </label>
+            </div>
+
+            <!-- Option 8: Hide Time Text -->
+            <div class="feature-card">
+              <div class="feature-info">
+                <label for="hide-timetext-toggle" class="feature-title">Disable Time Display</label>
+                <span class="feature-desc">Hide the video current time & duration text.</span>
+              </div>
+              <label class="switch" aria-label="Toggle Hide Time Display">
+                <input type="checkbox" id="hide-timetext-toggle">
+                <span class="switch-slider"></span>
+              </label>
+            </div>
           </div>
         </section>
       </div>
     </main>
     
     <footer class="popup-footer">
-      <span>Version 1.0.0 • Focus Command Panel</span>
+      <a href="https://github.com/vishwa-vsr/pw-control" target="_blank" class="github-link" rel="noopener noreferrer">
+        <svg class="github-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path>
+        </svg>
+        GitHub
+      </a>
+      <span class="version-text">v1.0.1</span>
     </footer>
   </div>
   <script src="popup.js"></script>
