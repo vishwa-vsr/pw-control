@@ -4,13 +4,14 @@
   let isSettingRate = false;
   let toastTimeout = null;
   let isModifyingDOM = false;
+  let extensionEnabled = true;
 
   // Custom hotkey and snap point configurations
-  let disableHotkeys = false;
+  let enableHotkeys = false;
   let disableScroll = false;
-  let keySpeedUp = '>';
-  let keySlowDown = '<';
-  let keyReset = 'r';
+  let keySpeedUp = '';
+  let keySlowDown = '';
+  let keyReset = '';
   let snapPoints = [1.0, 2.0, 3.0, 4.0];
 
   // Hold Space to Speed Up configuration
@@ -81,7 +82,7 @@
     }
     try {
       chrome.storage.local.get(
-        ['preferredSpeed', 'hideAskAI', 'hideDoubt', 'hideChat', 'hideNotes', 'hideCC', 'hideSpeed', 'hideSetting', 'hideTimeLine', 'hideTimeText', 'disableHotkeys', 'disableScroll', 'holdSpaceSpeedUp', 'holdSpaceSpeed', 'keySpeedUp', 'keySlowDown', 'keyReset', 'snapPoints'], 
+        ['preferredSpeed', 'hideAskAI', 'hideDoubt', 'hideChat', 'hideNotes', 'hideCC', 'hideSpeed', 'hideSetting', 'hideTimeLine', 'hideTimeText', 'enableHotkeys', 'disableScroll', 'holdSpaceSpeedUp', 'holdSpaceSpeed', 'keySpeedUp', 'keySlowDown', 'keyReset', 'snapPoints', 'extensionEnabled'], 
         function (result) {
           try {
             if (chrome.runtime && chrome.runtime.id) {
@@ -123,6 +124,7 @@
 
   // Load initial settings safely
   safeGetSettings(function (result) {
+    extensionEnabled = result.extensionEnabled !== false;
     if (result.preferredSpeed) {
       currentSpeed = parseFloat(result.preferredSpeed);
       applySpeedToActiveVideo();
@@ -133,13 +135,13 @@
       }
     }
 
-    disableHotkeys = !!result.disableHotkeys;
+    enableHotkeys = !!result.enableHotkeys;
     disableScroll = !!result.disableScroll;
     holdSpaceSpeedUp = !!result.holdSpaceSpeedUp;
     holdSpaceSpeed = result.holdSpaceSpeed !== undefined ? parseFloat(result.holdSpaceSpeed) : 2.0;
-    keySpeedUp = result.keySpeedUp || '>';
-    keySlowDown = result.keySlowDown || '<';
-    keyReset = result.keyReset || 'r';
+    keySpeedUp = result.keySpeedUp || '';
+    keySlowDown = result.keySlowDown || '';
+    keyReset = result.keyReset || '';
 
     if (result.snapPoints && Array.isArray(result.snapPoints) && result.snapPoints.length === 4) {
       snapPoints = result.snapPoints.map(v => parseFloat(v));
@@ -157,6 +159,10 @@
           if (!chrome.runtime || !chrome.runtime.id) return;
           if (area === 'local') {
             let changed = false;
+            if (changes.hasOwnProperty('extensionEnabled')) {
+              extensionEnabled = changes.extensionEnabled.newValue !== false;
+              changed = true;
+            }
             for (const key in hideSettings) {
               if (changes.hasOwnProperty(key)) {
                 hideSettings[key] = !!changes[key].newValue;
@@ -165,8 +171,8 @@
             }
 
             // Sync hotkey bindings in real-time
-            if (changes.hasOwnProperty('disableHotkeys')) {
-              disableHotkeys = !!changes.disableHotkeys.newValue;
+            if (changes.hasOwnProperty('enableHotkeys')) {
+              enableHotkeys = !!changes.enableHotkeys.newValue;
             }
             if (changes.hasOwnProperty('disableScroll')) {
               disableScroll = !!changes.disableScroll.newValue;
@@ -215,9 +221,10 @@
   // Apply layout class tags to documentElement for zero-flicker hiding
   function applySettingsHTML(settings) {
     const root = document.documentElement;
+
     Object.keys(classMap).forEach(key => {
       const className = classMap[key];
-      const isEnabled = settings[key] === true;
+      const isEnabled = extensionEnabled && (settings[key] === true);
       if (isEnabled) {
         root.classList.add(className);
       } else {
@@ -619,6 +626,13 @@
 
   // Inject floating widget directly inside the player's controls container
   function injectSpeedControl() {
+    if (!extensionEnabled) {
+      const container = document.getElementById('pwc-speed-control');
+      if (container) {
+        container.remove();
+      }
+      return;
+    }
     const footerRight = document.getElementById('footer-right-section');
     if (footerRight) {
       // 1. Primary path: PW Player overlay toolbar injection (placed as firstChild)
@@ -852,11 +866,16 @@
   // We use a unified, robust settings-offset positional mapping to identify toolbar buttons,
   // falling back to attribute classification. This is highly reliable across all browsers.
   function applyDistractorsState() {
+    const activeSettings = {};
+    for (const key in hideSettings) {
+      activeSettings[key] = extensionEnabled && hideSettings[key];
+    }
+
     const video = getActiveVideo();
     if (video) {
       const settingsBtn = findSettingsButton();
       if (settingsBtn) {
-        setHidden(settingsBtn, hideSettings.hideSetting);
+        setHidden(settingsBtn, activeSettings.hideSetting);
       }
       const fullscreenBtn = findFullscreenButton();
       const refBtn = settingsBtn || fullscreenBtn;
@@ -882,29 +901,29 @@
               
               if (offset === 1) {
                 // Notes (1 button left of Settings)
-                setHidden(btn, hideSettings.hideNotes);
+                setHidden(btn, activeSettings.hideNotes);
               } else if (offset === 2) {
                 // CC Subtitles (2 buttons left of Settings)
-                setHidden(btn, hideSettings.hideCC);
+                setHidden(btn, activeSettings.hideCC);
               } else if (offset === 3) {
                 // Doubt Q&A (3 buttons left of Settings / 1 left of CC)
-                setHidden(btn, hideSettings.hideDoubt);
+                setHidden(btn, activeSettings.hideDoubt);
               } else if (offset === 4) {
                 // Live Chat (4 buttons left of Settings / 2 left of CC)
-                setHidden(btn, hideSettings.hideChat);
+                setHidden(btn, activeSettings.hideChat);
               } else {
                 // Fallback for other buttons (like Ask AI if inside toolbar)
                 const type = checkElementOrChildType(btn);
                 if (type === 'askai') {
-                  setHidden(btn, hideSettings.hideAskAI);
+                  setHidden(btn, activeSettings.hideAskAI);
                 } else if (type === 'chat') {
-                  setHidden(btn, hideSettings.hideChat);
+                  setHidden(btn, activeSettings.hideChat);
                 } else if (type === 'doubt') {
-                  setHidden(btn, hideSettings.hideDoubt);
+                  setHidden(btn, activeSettings.hideDoubt);
                 } else if (type === 'notes') {
-                  setHidden(btn, hideSettings.hideNotes);
+                  setHidden(btn, activeSettings.hideNotes);
                 } else if (type === 'cc') {
-                  setHidden(btn, hideSettings.hideCC);
+                  setHidden(btn, activeSettings.hideCC);
                 }
               }
             });
@@ -913,15 +932,15 @@
             nativeButtons.forEach(btn => {
               const type = checkElementOrChildType(btn);
               if (type === 'chat') {
-                setHidden(btn, hideSettings.hideChat);
+                setHidden(btn, activeSettings.hideChat);
               } else if (type === 'doubt') {
-                setHidden(btn, hideSettings.hideDoubt);
+                setHidden(btn, activeSettings.hideDoubt);
               } else if (type === 'notes') {
-                setHidden(btn, hideSettings.hideNotes);
+                setHidden(btn, activeSettings.hideNotes);
               } else if (type === 'cc') {
-                setHidden(btn, hideSettings.hideCC);
+                setHidden(btn, activeSettings.hideCC);
               } else if (type === 'askai') {
-                setHidden(btn, hideSettings.hideAskAI);
+                setHidden(btn, activeSettings.hideAskAI);
               }
             });
           }
@@ -933,33 +952,42 @@
     const container = document.getElementById('pwc-speed-control');
     const nativeBadges = findNativeSpeedBadges();
 
-    if (hideSettings.hideSpeed) {
+    if (!extensionEnabled) {
       if (container) {
         setHidden(container, true);
       }
       for (const el of nativeBadges) {
-        setHidden(el, true);
+        setHidden(el, false);
       }
     } else {
-      if (container) {
-        setHidden(container, false);
-      }
-      for (const el of nativeBadges) {
-        setHidden(el, false);
+      if (activeSettings.hideSpeed) {
+        if (container) {
+          setHidden(container, true);
+        }
+        for (const el of nativeBadges) {
+          setHidden(el, true);
+        }
+      } else {
+        if (container) {
+          setHidden(container, false);
+        }
+        for (const el of nativeBadges) {
+          setHidden(el, false);
+        }
       }
     }
 
     // Handle timeline hiding
     const timeline = findTimeline();
     if (timeline) {
-      setHidden(timeline, hideSettings.hideTimeLine);
+      setHidden(timeline, activeSettings.hideTimeLine);
     }
 
     // Handle time display texts hiding
     const timeTexts = findTimeTexts();
     timeTexts.forEach(el => {
-      setHidden(el, hideSettings.hideTimeText);
-      hideTimeSeparators(el, hideSettings.hideTimeText);
+      setHidden(el, activeSettings.hideTimeText);
+      hideTimeSeparators(el, activeSettings.hideTimeText);
     });
   }
 
@@ -972,9 +1000,11 @@
       setupVideoListeners(video);
     }
 
-    if (video.playbackRate !== currentSpeed) {
+    const targetSpeed = extensionEnabled ? currentSpeed : 1.0;
+
+    if (video.playbackRate !== targetSpeed) {
       isSettingRate = true;
-      video.playbackRate = currentSpeed;
+      video.playbackRate = targetSpeed;
       setTimeout(() => {
         isSettingRate = false;
       }, 50);
@@ -1055,7 +1085,7 @@
     });
 
     container.addEventListener('wheel', (e) => {
-      if (disableScroll) return;
+      if (!extensionEnabled || disableScroll) return;
       e.preventDefault();
       const val = stepSpeed(e.deltaY < 0 ? 1 : -1);
       slider.value = val;
@@ -1152,18 +1182,29 @@
     showSpeedToast(speed);
   }
 
+  // Helper to check if user is typing in a text entry field
+  function isUserTyping() {
+    const active = document.activeElement;
+    if (!active) return false;
+    const tagName = active.tagName.toLowerCase();
+    if (tagName === 'textarea' || active.isContentEditable || active.getAttribute('role') === 'textbox') {
+      return true;
+    }
+    if (tagName === 'input') {
+      const type = (active.type || 'text').toLowerCase();
+      const textTypes = ['text', 'search', 'email', 'number', 'password', 'tel', 'url'];
+      return textTypes.includes(type);
+    }
+    return false;
+  }
+
   // Dedicated capture-phase Spacebar interceptors to prevent double-toggling
   document.addEventListener('keydown', (e) => {
+    if (!extensionEnabled) return;
     if (e.key !== ' ' && e.code !== 'Space') return;
     
-    // Safety check: Ignore if typing
-    const active = document.activeElement;
-    if (active) {
-      const tagName = active.tagName.toLowerCase();
-      if (tagName === 'input' || tagName === 'textarea' || active.isContentEditable || active.getAttribute('role') === 'textbox') {
-        return;
-      }
-    }
+    // Safety check: Ignore if typing in text fields
+    if (isUserTyping()) return;
 
     if (holdSpaceSpeedUp) {
       e.preventDefault();
@@ -1182,16 +1223,11 @@
   }, true); // useCapture = true
 
   document.addEventListener('keyup', (e) => {
+    if (!extensionEnabled) return;
     if (e.key !== ' ' && e.code !== 'Space') return;
 
-    // Safety check: Ignore if typing
-    const active = document.activeElement;
-    if (active) {
-      const tagName = active.tagName.toLowerCase();
-      if (tagName === 'input' || tagName === 'textarea' || active.isContentEditable || active.getAttribute('role') === 'textbox') {
-        return;
-      }
-    }
+    // Safety check: Ignore if typing in text fields
+    if (isUserTyping()) return;
 
     if (holdSpaceSpeedUp) {
       e.preventDefault();
@@ -1214,16 +1250,10 @@
 
   // Listen to keyboard shortcuts (bubble phase)
   document.addEventListener('keydown', (e) => {
-    if (disableHotkeys) return;
+    if (!extensionEnabled || !enableHotkeys) return;
 
-    // Safety check: Ignore if typing in text inputs or editable areas
-    const active = document.activeElement;
-    if (active) {
-      const tagName = active.tagName.toLowerCase();
-      if (tagName === 'input' || tagName === 'textarea' || active.isContentEditable || active.getAttribute('role') === 'textbox') {
-        return;
-      }
-    }
+    // Safety check: Ignore if typing in text fields
+    if (isUserTyping()) return;
 
     if (matchKey(e, keySpeedUp)) {
       e.preventDefault();

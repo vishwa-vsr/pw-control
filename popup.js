@@ -12,6 +12,31 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  const themeToggleBtn = document.getElementById('theme-toggle-btn');
+  const sunIcon = themeToggleBtn ? themeToggleBtn.querySelector('.sun-icon') : null;
+  const moonIcon = themeToggleBtn ? themeToggleBtn.querySelector('.moon-icon') : null;
+
+  function applyTheme(isLight) {
+    if (isLight) {
+      document.body.classList.add('light-theme');
+      if (sunIcon) sunIcon.style.display = 'none';
+      if (moonIcon) moonIcon.style.display = 'block';
+    } else {
+      document.body.classList.remove('light-theme');
+      if (sunIcon) sunIcon.style.display = 'block';
+      if (moonIcon) moonIcon.style.display = 'none';
+    }
+  }
+
+  if (themeToggleBtn) {
+    themeToggleBtn.addEventListener('click', () => {
+      const isLight = document.body.classList.contains('light-theme');
+      const nextLight = !isLight;
+      applyTheme(nextLight);
+      safeStorageSet({ themeMode: nextLight ? 'light' : 'dark' });
+    });
+  }
+
   const toggles = {
     hideAskAI: document.getElementById('hide-askai-toggle'),
     hideDoubt: document.getElementById('hide-doubt-toggle'),
@@ -25,7 +50,7 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   const customToggles = {
-    disableHotkeys: document.getElementById('disable-hotkeys-toggle'),
+    enableHotkeys: document.getElementById('enable-hotkeys-toggle'),
     disableScroll: document.getElementById('disable-scroll-toggle'),
     holdSpaceSpeedUp: document.getElementById('hold-space-toggle')
   };
@@ -51,9 +76,17 @@ document.addEventListener('DOMContentLoaded', () => {
   const loadingOverlay = document.getElementById('loading-overlay');
   const editorContainer = document.getElementById('hotkeys-editor-container');
 
-  // Tab switching components
   const tabButtons = document.querySelectorAll('.tab-btn');
   const tabPanels = document.querySelectorAll('.tab-panel');
+  const popupContainer = document.querySelector('.popup-container');
+
+  function updateExtensionState(enabled) {
+    if (enabled) {
+      popupContainer.classList.remove('extension-disabled');
+    } else {
+      popupContainer.classList.add('extension-disabled');
+    }
+  }
 
   let snapPoints = [1.0, 2.0, 3.0, 4.0];
 
@@ -171,8 +204,9 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   safeStorageGet(
-    ['preferredSpeed', 'hideAskAI', 'hideDoubt', 'hideChat', 'hideNotes', 'hideCC', 'hideSpeed', 'hideSetting', 'hideTimeLine', 'hideTimeText', 'disableHotkeys', 'disableScroll', 'holdSpaceSpeedUp', 'holdSpaceSpeed', 'keySpeedUp', 'keySlowDown', 'keyReset', 'snapPoints'],
+    ['preferredSpeed', 'hideAskAI', 'hideDoubt', 'hideChat', 'hideNotes', 'hideCC', 'hideSpeed', 'hideSetting', 'hideTimeLine', 'hideTimeText', 'enableHotkeys', 'disableScroll', 'holdSpaceSpeedUp', 'holdSpaceSpeed', 'keySpeedUp', 'keySlowDown', 'keyReset', 'snapPoints', 'extensionEnabled', 'themeMode'],
     (result) => {
+      applyTheme(result.themeMode === 'light');
       // Load focus toggles
       for (const key in toggles) {
         if (toggles[key]) {
@@ -180,10 +214,13 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       }
 
+      // Load extension enabled state (always active)
+      updateExtensionState(true);
+
       // Load custom settings
-      if (customToggles.disableHotkeys) {
-        customToggles.disableHotkeys.checked = !!result.disableHotkeys;
-        toggleEditorState(!!result.disableHotkeys);
+      if (customToggles.enableHotkeys) {
+        customToggles.enableHotkeys.checked = !!result.enableHotkeys;
+        toggleEditorState(!result.enableHotkeys);
       }
       if (customToggles.disableScroll) {
         customToggles.disableScroll.checked = !!result.disableScroll;
@@ -207,10 +244,10 @@ document.addEventListener('DOMContentLoaded', () => {
       });
       updateTicksAndPresets(snapPoints);
 
-      // Load key bindings (default to standard presets if uninitialized)
-      if (keyInputs.keySpeedUp) keyInputs.keySpeedUp.value = result.keySpeedUp || '>';
-      if (keyInputs.keySlowDown) keyInputs.keySlowDown.value = result.keySlowDown || '<';
-      if (keyInputs.keyReset) keyInputs.keyReset.value = result.keyReset || 'r';
+      // Load key bindings (default to empty if uninitialized)
+      if (keyInputs.keySpeedUp) keyInputs.keySpeedUp.value = result.keySpeedUp || '';
+      if (keyInputs.keySlowDown) keyInputs.keySlowDown.value = result.keySlowDown || '';
+      if (keyInputs.keyReset) keyInputs.keyReset.value = result.keyReset || '';
 
       // Load speed (default to 1.0x if uninitialized)
       const speed = result.preferredSpeed ? parseFloat(result.preferredSpeed) : 1.0;
@@ -237,13 +274,15 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+
+
   // Save custom layout settings changes
   for (const key in customToggles) {
     if (customToggles[key]) {
       customToggles[key].addEventListener('change', (e) => {
         const isChecked = e.target.checked;
-        if (key === 'disableHotkeys') {
-          toggleEditorState(isChecked);
+        if (key === 'enableHotkeys') {
+          toggleEditorState(!isChecked);
         }
         if (key === 'holdSpaceSpeedUp') {
           toggleHoldSpaceConfig(!isChecked);
@@ -379,6 +418,38 @@ document.addEventListener('DOMContentLoaded', () => {
         chrome.tabs.create({ url: url });
       } else {
         window.open(url, '_blank');
+      }
+    });
+  }
+
+  const versionLink = document.querySelector('.version-link');
+  if (versionLink) {
+    versionLink.addEventListener('click', (e) => {
+      e.preventDefault();
+      const url = versionLink.getAttribute('href');
+      if (typeof chrome !== 'undefined' && chrome.tabs && chrome.tabs.create) {
+        chrome.tabs.create({ url: url });
+      } else {
+        window.open(url, '_blank');
+      }
+    });
+  }
+  const rateLink = document.querySelector('.rate-link');
+  if (rateLink) {
+    let rateUrl = 'https://chromewebstore.google.com/detail/pw-control/ibepglcdcaanmkledmpgfapaffkhbadj?authuser=0&hl=en-GB';
+    const ua = navigator.userAgent.toLowerCase();
+    if (ua.includes('firefox')) {
+      rateUrl = 'https://addons.mozilla.org/en-US/firefox/addon/pw-control/';
+    } else if (ua.includes('edg')) {
+      rateUrl = 'https://microsoftedge.microsoft.com/addons/Microsoft-Edge-Extensions-Home';
+    }
+    rateLink.setAttribute('href', rateUrl);
+    rateLink.addEventListener('click', (e) => {
+      e.preventDefault();
+      if (typeof chrome !== 'undefined' && chrome.tabs && chrome.tabs.create) {
+        chrome.tabs.create({ url: rateUrl });
+      } else {
+        window.open(rateUrl, '_blank');
       }
     });
   }

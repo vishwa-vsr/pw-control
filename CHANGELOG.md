@@ -6,7 +6,28 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ---
 
-## [1.0.1] - 2026-07-06
+## [1.0.2] - 2026-07-09
+
+### Added
+- **Light & Dark Mode**: Added a sun/moon button in the top corner of the control panel to switch between a bright style and a dark slate style. Your selection is automatically saved.
+- **Smart "Rate Us" Link**: Added a feedback button in the footer that automatically detects your web browser (Chrome, Firefox, or Edge) and opens the correct store page so you can rate the extension.
+- **Direct Changelog Link**: Turned the version number in the footer into a link that opens the list of updates on GitHub.
+
+### Changed
+- **Dynamic Screen Refreshing**: Improved the extension to automatically trigger a page resize event when settings change. This forces the browser to refresh the video controls layout, preventing visual glitches or misaligned buttons.
+- **Keyboard Shortcut Defaults**: Removed the default keyboard keys (`>` to speed up, `<` to slow down, `r` to reset) so shortcuts are empty by default, preventing unexpected button presses.
+- **Enable Shortcuts Toggle**: Inverted the keyboard hotkey setting logic. Keyboard shortcuts are now "Enabled" rather than "Disabled" by default, so they will only work if you check the box to turn them on.
+- **Hide Note Markers Option**: The distraction option that previously turned off subtitles now hides the note markers timeline on the video player instead.
+- **Removed Static Speed Buttons**: Cleaned up the settings view by removing the quick-click speed preset buttons (1.0x, 1.5x, 1.8x, 2.0x), making the controls panel less cluttered.
+- **Cleaner Dashboard Styles**: Refreshed the control panel styling with a clean slate gray design (with a "no glow" variation), smoother switching when toggling light/dark themes, and better spacing and text size for easier reading.
+- **Chrome Build Folder Rename**: Updated the extension builder script to place Chrome files in a folder named `pw-chrome` instead of the generic name `pw-dist`.
+
+### Fixed
+- **Space Hold Focus Fix**: Fixed a bug where holding the Spacebar to speed up wouldn't work if you had just adjusted the video speed slider (because the slider kept focus and the extension thought you were typing in a text field). The key holds now work immediately even if the slider is focused.
+
+---
+
+## [1.0.1] - 2026-07-08
 
 ### Added
 - **Hold Space to Speed Up**: Press and hold Spacebar to temporarily play at a custom speed (default `2.0x`). Releasing restores original speed. Custom rate is configurable in the popup Speed tab.
@@ -20,7 +41,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - **Minimalist Header**: Removed header subtitle and stripped the stroke/shadow frame around the logo, centering it at `32px`.
 - **Footer Realignment**: Removed the "Focus Command Panel" text and aligned the GitHub link to the far-left and version display (`v1.0.1`) to the far-right.
 
-
+### Fixed
+- **Slash Separator Bug**: Resolved the layout bug where raw text slashes (`/`) remained visible when time text was disabled.
+- **Space Double-Toggle Bug**: Resolved a race condition where tapping Space caused the video to play/pause for a microsecond by using capture-phase event listeners to isolate Spacebar interactions from page scripts.
 
 ---
 

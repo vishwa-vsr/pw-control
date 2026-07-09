@@ -26,7 +26,7 @@ DIST_DIR = os.path.join(PROJECT_DIR, "pw-dist")
 SKIP = {
     "build.py", "node_modules", "package.json", "package-lock.json", 
     ".git", ".gitignore", "__pycache__", "project_rules.md", 
-    "design.md", "README.md", "pw-dist", "pw-firefox", "backup",
+    "design.md", "README.md", "pw-chrome", "pw-firefox", "pw-edge", "pw-dist", "backup",
     "PW Video Player.html", "PW Video Player_files", "promo-posters", ".agents",
     "LICENSE", "CHANGELOG.md", "PRIVACY_POLICY.md"
 }
@@ -471,7 +471,7 @@ if __name__ == "__main__":
         should_build = True
     else:
         try:
-            ans = input("Would you like to compile/build the Chrome (dist) and Firefox folders now? (y/n) [n]: ").strip().lower()
+            ans = input("Would you like to compile/build the Chrome, Firefox, and Edge folders now? (y/n) [n]: ").strip().lower()
             if ans in ("y", "yes"):
                 should_build = True
         except (KeyboardInterrupt, EOFError):
@@ -479,12 +479,13 @@ if __name__ == "__main__":
             sys.exit(0)
             
     if should_build:
-        build_target("pw-dist", is_firefox=False)
+        build_target("pw-chrome", is_firefox=False)
         build_target("pw-firefox", is_firefox=True)
+        build_target("pw-edge", is_firefox=False)
         
         # Remove any old zip archives inside the src directory
         for item in os.listdir(PROJECT_DIR):
-            if item.endswith(".zip") and (item.startswith("pw-dist-v") or item.startswith("pw-firefox-v") or item.startswith("pw-source-v")):
+            if item.endswith(".zip") and (item.startswith("pw-chrome-v") or item.startswith("pw-firefox-v") or item.startswith("pw-edge-v") or item.startswith("pw-source-v")):
                 try:
                     os.remove(os.path.join(PROJECT_DIR, item))
                     print(f"  [Cleanup] Removed old archive: {item}")
@@ -539,8 +540,9 @@ if __name__ == "__main__":
             print("=" * 60)
             print("  Packaging Zip Archives for Store Uploads")
             print("=" * 60)
-            zip_target("pw-dist")
+            zip_target("pw-chrome")
             zip_target("pw-firefox")
+            zip_target("pw-edge")
             zip_source()
             print("=" * 60 + "\n")
         else:

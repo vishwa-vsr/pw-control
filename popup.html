@@ -18,12 +18,32 @@
 
   <div class="popup-container">
     <header class="popup-header">
-      <div class="logo-wrapper">
-        <img class="header-logo-img" src="icons/icon48.png" alt="pw control logo">
+      <div class="header-brand">
+        <div class="logo-wrapper">
+          <img class="header-logo-img" src="icons/icon48.png" alt="pw control logo">
+        </div>
+        <div class="title-wrapper">
+          <h1 class="header-title">pw control</h1>
+        </div>
       </div>
-      <div class="title-wrapper">
-        <h1 class="header-title">pw control</h1>
-      </div>
+      <button type="button" id="theme-toggle-btn" class="theme-toggle-btn" aria-label="Toggle Theme">
+        <!-- Sun icon for light mode (visible when in dark mode) -->
+        <svg class="theme-icon sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="5"></circle>
+          <line x1="12" y1="1" x2="12" y2="3"></line>
+          <line x1="12" y1="21" x2="12" y2="23"></line>
+          <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+          <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+          <line x1="1" y1="12" x2="3" y2="12"></line>
+          <line x1="21" y1="12" x2="23" y2="12"></line>
+          <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+          <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+        </svg>
+        <!-- Moon icon for dark mode (visible when in light mode) -->
+        <svg class="theme-icon moon-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="display: none;">
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+        </svg>
+      </button>
     </header>
 
     <!-- Tab Navigation Selector -->
@@ -67,12 +87,7 @@
             <div class="ticks-row"></div>
           </div>
 
-          <div class="presets-row">
-            <button type="button" class="preset-btn" data-speed="1.0" aria-label="Set speed to 1.0x">1.0x</button>
-            <button type="button" class="preset-btn" data-speed="1.5" aria-label="Set speed to 1.5x">1.5x</button>
-            <button type="button" class="preset-btn" data-speed="1.8" aria-label="Set speed to 1.8x">1.8x</button>
-            <button type="button" class="preset-btn" data-speed="2.0" aria-label="Set speed to 2.0x">2.0x</button>
-          </div>
+
 
           <!-- Snap Points Editor (Collapsible) -->
           <div id="presets-editor-container" class="presets-editor-container">
@@ -105,14 +120,14 @@
           <h2 class="section-title font-small">Shortcut & Mouse Wheel Settings</h2>
           
           <div class="toggles-list">
-            <!-- Toggle 1: Disable Keyboard Shortcuts -->
+            <!-- Toggle 1: Enable Keyboard Shortcuts -->
             <div class="feature-card">
               <div class="feature-info">
-                <label for="disable-hotkeys-toggle" class="feature-title">Disable Keyboard Hotkeys</label>
-                <span class="feature-desc">Turn off speed adjustments using keyboard.</span>
+                <label for="enable-hotkeys-toggle" class="feature-title">Enable Keyboard Hotkeys</label>
+                <span class="feature-desc">Adjust video playback speed using keyboard.</span>
               </div>
               <label class="switch" aria-label="Toggle Keyboard Hotkeys">
-                <input type="checkbox" id="disable-hotkeys-toggle">
+                <input type="checkbox" id="enable-hotkeys-toggle">
                 <span class="switch-slider"></span>
               </label>
             </div>
@@ -121,17 +136,16 @@
             <div class="hotkeys-editor" id="hotkeys-editor-container">
               <div class="input-row">
                 <span class="input-label">Speed Up Key</span>
-                <input type="text" id="key-speedup" class="hotkey-input" readonly value=">">
+                <input type="text" id="key-speedup" class="hotkey-input" readonly value="">
               </div>
               <div class="input-row">
                 <span class="input-label">Slow Down Key</span>
-                <input type="text" id="key-slowdown" class="hotkey-input" readonly value="<">
+                <input type="text" id="key-slowdown" class="hotkey-input" readonly value="">
               </div>
               <div class="input-row">
                 <span class="input-label">Reset Speed Key</span>
-                <input type="text" id="key-reset" class="hotkey-input" readonly value="r">
+                <input type="text" id="key-reset" class="hotkey-input" readonly value="">
               </div>
-              <span class="hotkeys-guide-note">Click a box and press any key to bind a new shortcut.</span>
             </div>
 
             <!-- Toggle 2: Disable Mouse Scroll Control -->
@@ -174,10 +188,11 @@
           <h2 class="section-title">Focus Toggles</h2>
           
           <div class="toggles-list">
+
             <!-- Option 1: Ask AI -->
             <div class="feature-card">
               <div class="feature-info">
-                <label for="hide-askai-toggle" class="feature-title">Disable 'Ask AI'</label>
+                <label for="hide-askai-toggle" class="feature-title">Hide 'Ask AI'</label>
                 <span class="feature-desc">Hide the floating Ask AI helper button.</span>
               </div>
               <label class="switch" aria-label="Toggle Hide Ask AI">
@@ -189,7 +204,7 @@
             <!-- Option 2: Doubt Q&A -->
             <div class="feature-card">
               <div class="feature-info">
-                <label for="hide-doubt-toggle" class="feature-title">Disable Doubt Q&amp;A</label>
+                <label for="hide-doubt-toggle" class="feature-title">Hide Doubt Q&amp;A</label>
                 <span class="feature-desc">Hide the Q&amp;A doubt query widget.</span>
               </div>
               <label class="switch" aria-label="Toggle Hide Doubt Q&amp;A">
@@ -201,7 +216,7 @@
             <!-- Option 2b: Live Chat -->
             <div class="feature-card">
               <div class="feature-info">
-                <label for="hide-chat-toggle" class="feature-title">Disable Live Chat</label>
+                <label for="hide-chat-toggle" class="feature-title">Hide Live Chat</label>
                 <span class="feature-desc">Hide the live chat bubble widget.</span>
               </div>
               <label class="switch" aria-label="Toggle Hide Live Chat">
@@ -213,7 +228,7 @@
             <!-- Option 3: Hide Notes -->
             <div class="feature-card">
               <div class="feature-info">
-                <label for="hide-notes-toggle" class="feature-title">Disable Study Notes</label>
+                <label for="hide-notes-toggle" class="feature-title">Hide Study Notes</label>
                 <span class="feature-desc">Hide PDF study materials panels.</span>
               </div>
               <label class="switch" aria-label="Toggle Hide Notes">
@@ -225,8 +240,8 @@
             <!-- Option 4: Hide CC -->
             <div class="feature-card">
               <div class="feature-info">
-                <label for="hide-cc-toggle" class="feature-title">Disable CC Subtitles</label>
-                <span class="feature-desc">Hide subtitles and captions overlay.</span>
+                <label for="hide-cc-toggle" class="feature-title">Hide note timeline</label>
+                <span class="feature-desc">Hide the video note markers timeline.</span>
               </div>
               <label class="switch" aria-label="Toggle Hide CC">
                 <input type="checkbox" id="hide-cc-toggle">
@@ -237,7 +252,7 @@
             <!-- Option 5: Speed Control Widget -->
             <div class="feature-card">
               <div class="feature-info">
-                <label for="hide-speed-toggle" class="feature-title">Disable Speed Widget</label>
+                <label for="hide-speed-toggle" class="feature-title">Hide Speed Widget</label>
                 <span class="feature-desc">Hide the speed badge on video controls.</span>
               </div>
               <label class="switch" aria-label="Toggle Hide Speed Widget">
@@ -249,7 +264,7 @@
             <!-- Option 6: Hide Settings Icon -->
             <div class="feature-card">
               <div class="feature-info">
-                <label for="hide-setting-toggle" class="feature-title">Disable Settings Icon</label>
+                <label for="hide-setting-toggle" class="feature-title">Hide Settings Icon</label>
                 <span class="feature-desc">Hide the video settings gear icon.</span>
               </div>
               <label class="switch" aria-label="Toggle Hide Settings Icon">
@@ -261,7 +276,7 @@
             <!-- Option 7: Hide Horizontal Timeline -->
             <div class="feature-card">
               <div class="feature-info">
-                <label for="hide-timeline-toggle" class="feature-title">Disable Timeline Line</label>
+                <label for="hide-timeline-toggle" class="feature-title">Hide Timeline Line</label>
                 <span class="feature-desc">Hide the horizontal line of time.</span>
               </div>
               <label class="switch" aria-label="Toggle Hide Timeline Line">
@@ -273,7 +288,7 @@
             <!-- Option 8: Hide Time Text -->
             <div class="feature-card">
               <div class="feature-info">
-                <label for="hide-timetext-toggle" class="feature-title">Disable Time Display</label>
+                <label for="hide-timetext-toggle" class="feature-title">Hide Time Display</label>
                 <span class="feature-desc">Hide the video current time & duration text.</span>
               </div>
               <label class="switch" aria-label="Toggle Hide Time Display">
@@ -293,7 +308,13 @@
         </svg>
         GitHub
       </a>
-      <span class="version-text">v1.0.1</span>
+      <a href="#" target="_blank" class="rate-link" rel="noopener noreferrer">
+        <svg class="rate-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width: 12px; height: 12px; stroke: currentColor; fill: none; margin-right: 4px; display: inline-block; vertical-align: middle;">
+          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+        </svg>
+        Rate Us
+      </a>
+      <a href="https://github.com/vishwa-vsr/pw-control/blob/main/CHANGELOG.md" target="_blank" class="version-link" rel="noopener noreferrer">v1.0.2</a>
     </footer>
   </div>
   <script src="popup.js"></script>

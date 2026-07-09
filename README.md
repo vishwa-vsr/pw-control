@@ -4,6 +4,13 @@ A premium, lightweight browser extension designed to enhance the learning experi
 
 ---
 
+## 🚀 Download Links
+
+- **Google Chrome Web Store:** [Download Extension](https://chromewebstore.google.com/detail/pw-control/ibepglcdcaanmkledmpgfapaffkhbadj?authuser=0&hl=en-GB)
+- **Mozilla Firefox Add-ons:** [Download Extension](https://addons.mozilla.org/en-US/firefox/addon/pw-control/)
+
+---
+
 ## 🌟 Key Features
 
 ### ⏱️ Advanced Speed Control
@@ -11,6 +18,7 @@ A premium, lightweight browser extension designed to enhance the learning experi
 - **Custom Snap Points:** Define 4 custom presets to quickly jump to your favorite speeds.
 - **Scroll Wheel Speed Adjust:** Simply hover over the speed widget and scroll up/down to change speed instantly.
 - **Dynamic Speed Toast:** A sleek on-screen overlay shows the updated speed when adjusted.
+- **Hold Space to Speed Up:** Press and hold Spacebar to temporarily play at a custom speed (default: `2.0x`). Releasing it restores your original speed.
 
 ### 🎯 Tailored Focus Toggles (Independent Hiding)
 - **Disable 'Ask AI':** Hide the floating AI helper capsule.

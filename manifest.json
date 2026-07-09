@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "pw control",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Custom video speed control up to 4x for pw.live.",
   "icons": {
     "16": "icons/icon16.png",
