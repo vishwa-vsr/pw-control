@@ -15,7 +15,3 @@ assets/
 *.swp
 Thumbs.db
 .DS_Store
-
-# Local/Agent folders
-.gemini/
-.agents/
