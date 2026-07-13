@@ -1,0 +1,21 @@
+# Build & compiled directories
+dist/
+backup/
+docs/
+assets/
+*.zip
+
+# IDE/OS & Temporary files
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
+Thumbs.db
+.DS_Store
+
+# Local/Agent folders
+.gemini/
+.agents/
