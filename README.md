@@ -11,6 +11,8 @@
 
   A premium, lightweight browser extension designed to enhance the learning experience on `pw.live`. It provides custom playback speed controls (up to 4.0x) and independent focus toggles to remove distracting elements from the video player interface.
 
+  <br/><br/>
+  <img src="assets/privacy_marquee_1400x560.png" width="100%" alt="PW Control Privacy Features" />
 </div>
 
 ---

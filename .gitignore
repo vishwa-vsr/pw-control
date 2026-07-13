@@ -2,7 +2,7 @@
 dist/
 backup/
 docs/
-assets/
+assets/promo-posters/
 *.zip
 
 # IDE/OS & Temporary files
