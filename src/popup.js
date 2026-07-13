@@ -216,7 +216,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       // Load extension enabled state (always active)
-      updateExtensionState(true);
+      updateExtensionState(result.extensionEnabled !== false);
 
       // Load custom settings
       if (customToggles.enableHotkeys) {
@@ -246,9 +246,9 @@ document.addEventListener('DOMContentLoaded', () => {
       updateTicksAndPresets(snapPoints);
 
       // Load key bindings (default to empty if uninitialized)
-      if (keyInputs.keySpeedUp) keyInputs.keySpeedUp.value = result.keySpeedUp || '';
-      if (keyInputs.keySlowDown) keyInputs.keySlowDown.value = result.keySlowDown || '';
-      if (keyInputs.keyReset) keyInputs.keyReset.value = result.keyReset || '';
+      if (keyInputs.keySpeedUp) keyInputs.keySpeedUp.value = result.keySpeedUp || getDefaultKey('keySpeedUp');
+      if (keyInputs.keySlowDown) keyInputs.keySlowDown.value = result.keySlowDown || getDefaultKey('keySlowDown');
+      if (keyInputs.keyReset) keyInputs.keyReset.value = result.keyReset || getDefaultKey('keyReset');
 
       // Load speed (default to 1.0x if uninitialized)
       const speed = result.preferredSpeed ? parseFloat(result.preferredSpeed) : 1.0;

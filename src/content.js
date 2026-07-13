@@ -1287,9 +1287,6 @@
     if (!extensionEnabled) return;
     if (e.key !== ' ' && e.code !== 'Space') return;
 
-    // Safety check: Ignore if typing in text fields
-    if (isUserTyping()) return;
-
     if (holdSpaceSpeedUp) {
       e.preventDefault();
       e.stopPropagation();
@@ -1304,10 +1301,25 @@
         applyTemporarySpeed(speedBeforeHold);
         isHoldingSpace = false;
       } else {
-        togglePlayPause();
+        // Only toggle play/pause if user is not typing in a text field
+        if (!isUserTyping()) {
+          togglePlayPause();
+        }
       }
     }
   }, true); // useCapture = true
+
+  // Safety net: Reset hold-space state when tab loses focus
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden && isHoldingSpace) {
+      if (spacePressTimer) {
+        clearTimeout(spacePressTimer);
+        spacePressTimer = null;
+      }
+      applyTemporarySpeed(speedBeforeHold);
+      isHoldingSpace = false;
+    }
+  });
 
   // Listen to keyboard shortcuts (bubble phase)
   document.addEventListener('keydown', (e) => {

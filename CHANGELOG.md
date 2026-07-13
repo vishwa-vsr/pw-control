@@ -24,6 +24,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ### Fixed
 - **6-7 Second Page Freeze (Lag Fix)**: Optimized DOM elements lookup by implementing a caching mechanism with connectivity checks and throttling DOM mutation observer scans. Page settings toggles are now completely instant.
+- **Hold-Space Permanent Speed Boost Bug**: Fixed a race condition where holding Spacebar to boost speed and then clicking into a text field (like a search bar) would permanently lock the playback speed at the boosted rate with no way to undo it except reloading the page. Now the original speed is always restored when the Spacebar is released, regardless of where focus has moved. Also added a safety check that resets the speed if you switch tabs while holding Spacebar.
+- **Extension Enable/Disable Toggle Ignored**: Fixed a bug where the popup settings always treated the extension as enabled, ignoring the stored enable/disable state. The popup now correctly respects the saved state.
+- **Hotkey Keycaps Blank on First Install**: Fixed a bug where the three keyboard shortcut keycap boxes appeared empty on first install instead of showing the default keys (`>`, `<`, `r`).
 
 ---
 
