@@ -1,6 +1,5 @@
 /* PW Control Premium Theme - Obsidian Slate Matte Dashboard (No Glow Version) */
 
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Space+Mono:wght@700&display=swap');
 
 /* === 1. DESIGN SYSTEM PRIMITIVES === */
 :root {
@@ -21,8 +20,7 @@
   
   /* System Defaults */
   --color-white: #ffffff;
-  --color-red-500: #ef4444; /* Destructive state */
-  --color-emerald-500: #10b981; /* Success state */
+
   
   /* Strict Spacing Scale for Consistent Rhythms */
   --space-1: 4px;
@@ -68,8 +66,7 @@
   --accent-active: var(--color-cyan-700);
   --accent-dim: var(--color-cyan-dim);
   
-  --color-success: var(--color-emerald-500);
-  --color-error: var(--color-red-500);
+
 }
 
 /* === LIGHT THEME VARIABLES === */
@@ -656,29 +653,7 @@ body::-webkit-scrollbar-thumb:hover {
   cursor: pointer;
 }
 
-/* Description is removed for a cleaner, simpler, and shorter UI */
-.feature-desc {
-  display: none;
-}
 
-/* Inline SVG feature icon next to focus toggles */
-.feature-icon-wrapper {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  background: rgba(255, 255, 255, 0.02);
-  border-radius: var(--radius-sm);
-  color: var(--accent-primary);
-  flex-shrink: 0;
-  border: 1px solid var(--color-border);
-}
-
-.feature-icon {
-  width: 14px;
-  height: 14px;
-}
 
 /* Configuration Row */
 .feature-config-row {
@@ -827,15 +802,6 @@ input:checked + .switch-slider:before {
   background: var(--bg-card-hover);
 }
 
-.hotkeys-guide-note {
-  grid-column: span 3; /* Spans across all 3 columns */
-  font-size: 10px;
-  color: var(--text-muted);
-  font-weight: 500;
-  text-align: center;
-  margin-top: var(--space-2);
-  line-height: 1.35;
-}
 
 /* Focus Toggles Section title overrides */
 .focus-section {

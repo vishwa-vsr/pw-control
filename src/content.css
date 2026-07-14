@@ -205,8 +205,7 @@
    ========================================================================== */
 
 /* --- Hide Notes: PW Live toolbar button has title="Add note" --- */
-html.pwc-hide-notes #footer-right-section > [title*="note" i],
-html.pwc-hide-notes #footer-right-section > [title*="Note" i] {
+html.pwc-hide-notes #footer-right-section > [title*="note" i] {
   display: none !important;
 }
 

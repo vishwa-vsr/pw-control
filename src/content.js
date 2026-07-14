@@ -248,16 +248,9 @@
     });
   }
 
-  // Helper to find video elements, including those nested inside Shadow DOMs
+  // Helper to find video elements in the document
   function findVideos(root = document) {
-    let list = Array.from(root.querySelectorAll('video'));
-    const elements = root.querySelectorAll('*');
-    for (const el of elements) {
-      if (el.shadowRoot) {
-        list = list.concat(findVideos(el.shadowRoot));
-      }
-    }
-    return list;
+    return Array.from(root.querySelectorAll('video'));
   }
 
   // Helper to find the active video element (selects the video with largest display area)
@@ -454,20 +447,6 @@
     return el.parentNode;
   }
 
-  // Check if a child element is an interactive control (ignoring structural divs/spacers)
-  function isInteractiveControl(el) {
-    const tagName = el.tagName.toLowerCase();
-    if (
-      tagName === 'button' || 
-      el.querySelector('svg') || 
-      el.getAttribute('role') === 'button' || 
-      (el.getAttribute('class') || '').includes('btn') || 
-      (el.getAttribute('class') || '').includes('button')
-    ) {
-      return true;
-    }
-    return false;
-  }
 
   // Find native speed pills (like "1.1x") located next to the time display
   function findNativeSpeedBadges() {
@@ -1449,12 +1428,28 @@
 
   // Throttled execution of DOM monitoring to optimize performance
   let monitorTimeout = null;
+  let monitorIntervalId = null;
+
   function throttledMonitor() {
     if (monitorTimeout) return;
     monitorTimeout = setTimeout(() => {
       monitorTimeout = null;
       monitor();
+      manageMonitorInterval();
     }, 150);
+  }
+
+  // Start or stop the safety-net interval based on whether a video exists
+  function manageMonitorInterval() {
+    const hasVideo = !!(cachedVideo && cachedVideo.isConnected);
+    if (hasVideo && !monitorIntervalId) {
+      // Video found — start the safety-net interval
+      monitorIntervalId = setInterval(throttledMonitor, 1000);
+    } else if (!hasVideo && monitorIntervalId) {
+      // No video — stop the interval to save CPU
+      clearInterval(monitorIntervalId);
+      monitorIntervalId = null;
+    }
   }
 
   // Main monitoring function
@@ -1469,7 +1464,6 @@
       try {
         injectSpeedControl();
         injectInstantHideButton();
-        applyDistractorsState();
       } finally {
         isModifyingDOM = false;
       }
@@ -1487,9 +1481,7 @@
     subtree: true
   });
 
-  // Safety net interval check
-  setInterval(throttledMonitor, 1000);
-
   // Initial execution
   monitor();
+  manageMonitorInterval();
 })();
