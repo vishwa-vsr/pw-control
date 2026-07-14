@@ -21,6 +21,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Changed
 - **Edge "Rate Us" Link**: Updated the feedback link to open the official Edge store listing page directly instead of the generic home page.
 - **Git Configurations**: Cleaned up `.gitignore` to prevent tracking built binaries and store packaging ZIP archives.
+- **Popup Settings Organization**: Moved "Hide Speed Widget" and "Instant Hide Button" configuration toggles from the Focus tab to the Speed tab under the "Shortcut & Mouse Wheel Settings" section.
+- **Collapsible Configuration Panels**: Changed the Keyboard Hotkey configuration grid and Hold-Space speed input row to be completely hidden when their parent features are disabled, making the dashboard panel much cleaner.
+- **Updated Default Keyboard Shortcuts**: Set the default keys to 'h' (Speed Up), 'j' (Slow Down), and 'l' (Reset Speed) to provide a more intuitive and comfortable keyboard layout. Displayed keys are now automatically shown in uppercase (e.g., 'L' instead of 'l') to prevent visual confusion with the number '1'.
 
 ### Fixed
 - **6-7 Second Page Freeze (Lag Fix)**: Optimized DOM elements lookup by implementing a caching mechanism with connectivity checks and throttling DOM mutation observer scans. Page settings toggles are now completely instant.

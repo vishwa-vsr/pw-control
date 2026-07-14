@@ -669,8 +669,7 @@ body::-webkit-scrollbar-thumb:hover {
 }
 
 .feature-config-row.disabled {
-  opacity: 0.6;
-  pointer-events: none;
+  display: none !important;
 }
 
 .config-label {
@@ -752,9 +751,7 @@ input:checked + .switch-slider:before {
 }
 
 .hotkeys-editor.disabled {
-  opacity: 0.6;
-  pointer-events: none;
-  filter: grayscale(1);
+  display: none !important;
 }
 
 .hotkeys-editor .input-row {
@@ -780,6 +777,7 @@ input:checked + .switch-slider:before {
   font-family: 'Space Mono', monospace;
   font-size: var(--font-size-sm);
   font-weight: 700;
+  text-transform: uppercase;
   text-align: center;
   border-radius: var(--radius-sm);
   width: 100%; /* Symmetrical width */

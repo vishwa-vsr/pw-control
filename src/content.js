@@ -19,9 +19,9 @@
   // Custom hotkey and snap point configurations
   let enableHotkeys = false;
   let disableScroll = false;
-  let keySpeedUp = '';
-  let keySlowDown = '';
-  let keyReset = '';
+  let keySpeedUp = 'h';
+  let keySlowDown = 'j';
+  let keyReset = 'l';
   let snapPoints = [1.0, 2.0, 3.0, 4.0];
 
   // Hold Space to Speed Up configuration
@@ -150,9 +150,9 @@
     disableScroll = !!result.disableScroll;
     holdSpaceSpeedUp = !!result.holdSpaceSpeedUp;
     holdSpaceSpeed = result.holdSpaceSpeed !== undefined ? parseFloat(result.holdSpaceSpeed) : 2.0;
-    keySpeedUp = result.keySpeedUp || '';
-    keySlowDown = result.keySlowDown || '';
-    keyReset = result.keyReset || '';
+    keySpeedUp = result.keySpeedUp || 'h';
+    keySlowDown = result.keySlowDown || 'j';
+    keyReset = result.keyReset || 'l';
 
     if (result.snapPoints && Array.isArray(result.snapPoints) && result.snapPoints.length === 4) {
       snapPoints = result.snapPoints.map(v => parseFloat(v));

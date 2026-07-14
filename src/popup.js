@@ -92,9 +92,9 @@ document.addEventListener('DOMContentLoaded', () => {
   let snapPoints = [1.0, 2.0, 3.0, 4.0];
 
   function getDefaultKey(key) {
-    if (key === 'keySpeedUp') return '>';
-    if (key === 'keySlowDown') return '<';
-    if (key === 'keyReset') return 'r';
+    if (key === 'keySpeedUp') return 'h';
+    if (key === 'keySlowDown') return 'j';
+    if (key === 'keyReset') return 'l';
     return '';
   }
 
