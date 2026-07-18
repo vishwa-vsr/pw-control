@@ -9,91 +9,128 @@
   [![Firefox Add-ons](https://img.shields.io/badge/Firefox-Add--on-orange?logo=firefox-browser&logoColor=white)](https://addons.mozilla.org/en-US/firefox/addon/pw-control/)
   [![Edge Add-ons](https://img.shields.io/badge/Edge-Add--on-green?logo=microsoft-edge&logoColor=white)](https://microsoftedge.microsoft.com/addons/detail/pw-control/cnoboofnelihfmnjfbpbelpfdmogfaan)
 
-  A premium, lightweight browser extension designed to enhance the learning experience on `pw.live`. It provides custom playback speed controls (up to 4.0x) and independent focus toggles to remove distracting elements from the video player interface.
+  **PW Control** is a premium, lightweight browser extension designed to optimize the learning experience for students on the `pw.live` portal. It seamlessly integrates a custom speed controller (clamped from `0.5x` up to `4.0x`) and independent layout toggles directly into the video player, removing distracting sidebar panels and other clutter.
 
-  <br/><br/>
-  <img src="assets/privacy_marquee_1400x560.png" width="100%" alt="PW Control Privacy Features" />
+  [Direct Download](#-direct-store-downloads) • [Key Features](#-key-features) • [Project Structure](#-project-structure) • [How to Build](#-how-to-build)
 </div>
+
+---
+
+## 📖 Overview
+
+When learning online, speed and focus are key. Default video players often restrict speeds to standard values (like 2x) and include many distracting side panels (like live chats, doubts, and floating widgets). 
+
+**PW Control** solves this by:
+1. **Unlocking custom speed snapping** up to `4.0x` (with spacebar holding support).
+2. **Implementing a noise-gate Skip Silence scanner** that speeds up silent pauses automatically.
+3. **Decluttering the student interface** with toggleable rules that hide notes, doubtful Q&A tabs, and floating AI panels.
+
+> [!NOTE]
+> PW Control is built with **zero external dependencies** (no frameworks, no heavy libraries) using vanilla JavaScript, HTML, and CSS. This keeps it incredibly light, memory-efficient, and fast.
 
 ---
 
 ## 🚀 Installation & Download
 
 ### 🌐 Direct Store Downloads
+Get the extension officially from your browser's store:
 * **Google Chrome:** [Download from Chrome Web Store](https://chromewebstore.google.com/detail/pw-control/ibepglcdcaanmkledmpgfapaffkhbadj)
 * **Mozilla Firefox:** [Download from Firefox Add-ons](https://addons.mozilla.org/en-US/firefox/addon/pw-control/)
 * **Microsoft Edge:** [Download from Microsoft Edge Add-ons](https://microsoftedge.microsoft.com/addons/detail/pw-control/cnoboofnelihfmnjfbpbelpfdmogfaan)
 
-### 🛠️ Local Developer Install (For Testing Changes)
-1. Download or clone this repository to your computer.
-2. Open your browser's extension manager page (e.g., `chrome://extensions` or `edge://extensions`).
-3. Turn on **Developer mode** (usually a toggle in the top-right corner).
-4. Click **Load unpacked** (top-left) and select the `dist/chrome` (or `dist/edge`) folder.
+### 🛠️ Developer Mode Install (Local Testing)
+If you want to run the latest development code locally:
+1. Clone or download this repository.
+2. Open your browser's extensions page (`chrome://extensions` or `edge://extensions`).
+3. Toggle **Developer mode** on in the top-right.
+4. Click **Load unpacked** in the top-left and select the `dist/chrome` (or `dist/edge`) folder.
 
 ---
 
 ## 🌟 Key Features
 
-| ⏱️ Advanced Speed Control | 🎯 Focus Mode Toggles |
-| :--- | :--- |
-| **Custom Playback Speeds:** Adjust speed from `0.5x` up to `4.0x` in steps of `0.1x`. | **Disable 'Ask AI':** Hide the floating AI helper capsule. |
-| **Quick Presets:** Define 4 custom speed buttons to quickly switch to your favorite rates. | **Disable Doubt Q&A:** Hide the question-bubble doubt controls. |
-| **Scroll to Adjust:** Hover over the speed widget and scroll your mouse wheel. | **Disable Live Chat:** Clean up the chat bubble area. |
-| **Hold Space to Speed Up:** Hold <kbd>Spacebar</kbd> to play at a custom speed (default: `2.0x`). | **Disable Study Notes:** Hide attachments and note panels. |
-| **Skip Silence / Skip Intro:** Speed up quiet pauses (up to 8x) and skip video intro logos automatically. | **Disable Note Timeline:** Hide the lecture slide screenshot timeline panel. |
-| **Toast Speed HUD:** Sleek overlay showing your active speed when updated. | **Disable Settings Icon:** Hide player settings gear controls. |
+### ⏱️ Playback Optimization
+* **Fine-Tuning Slider**: Smoothly adjust speed from `0.5x` to `4.0x` in increments of `0.1x`.
+* **Instant Snap Presets**: Define 4 custom favorite speeds and switch to them instantly.
+* **Hold Space to Speed Up**: Press and hold <kbd>Spacebar</kbd> to temporarily play at your configured speedup rate (default: `2.0x`).
+* **Mouse Wheel Adjust**: Simply hover your cursor over the speed slider widget and scroll to step the speed up or down.
+* **Smart Skip Silence**: Automatically increases playback speed (up to 8.0x) during long silent gaps in lectures using the Web Audio API.
 
-### ⌨️ Hotkey Bindings
-You can configure keyboard shortcuts to control playback. (Defaults: <kbd>></kbd> to Speed Up, <kbd><</kbd> to Slow Down, and <kbd>r</kbd> to Reset).
+### 🎯 Focus & Decluttering Toggles
+Quickly toggle off interface distractions:
+* **Hide 'Ask AI'**: Hide the floating AI helper capsule.
+* **Hide Doubt Q&A**: Remove the floating doubt-entry buttons.
+* **Hide Live Chat**: Clean up the live chat overlay and side-panel comments.
+* **Hide Study Notes**: Hide secondary lecture attachment sheets.
+* **Hide Time Elements**: Hide player seek timelines or time labels if they make you anxious.
 
 ---
 
-## 📂 Project Architecture
+## ⌨️ Configurable Hotkeys
+
+You can map keyboard shortcuts inside the dashboard popup. The default shortcuts are:
+
+| Action | Default Key | Description |
+| :--- | :---: | :--- |
+| **Speed Up** | <kbd>h</kbd> | Increases speed by `0.1x` |
+| **Slow Down** | <kbd>j</kbd> | Decreases speed by `0.1x` |
+| **Reset Speed** | <kbd>l</kbd> | Resets playback rate to `1.0x` |
+
+---
+
+## 📂 Project Structure
+
+A clean overview of the source files and build folders:
 
 ```
 pw-control/
-├── src/                  # Extension source code
-│   ├── manifest.json     # Configuration file
-│   ├── popup.html/js/css # Extension popup controls
-│   ├── content.js/css    # Injected video controllers
-│   └── build.py          # Minifier compiler script
-└── dist/                 # Compiled builds (ignored by Git)
-    ├── chrome/           # Output for Chrome & Edge
-    └── firefox/          # Output for Firefox
+├── src/                  # Source files
+│   ├── manifest.json     # Extension setup & permissions
+│   ├── content.js        # Script injected into the video page
+│   ├── content.css       # Style overrides for the video player
+│   ├── popup.html        # Settings dashboard HTML layout
+│   ├── popup.js          # Settings dashboard logic
+│   ├── popup.css         # Sleek obsidian dashboard styles
+│   └── build.py          # Python compiler/minifier script
+├── assets/               # Promotional images & icons
+└── dist/                 # Generated builds (Git-ignored)
+    ├── chrome/           # Build optimized for Chrome/Edge
+    └── firefox/          # Build optimized for Firefox
 ```
 
 ---
 
-## 🛠️ How to Build
+## 🛠️ How to Build & Pack
 
-We use a Python script to automate minifying, optimizing, and packaging the extension.
+The project uses a custom Python build script to automate cleaning, compiling, minifying, and packaging the extension.
 
-1. Open your terminal in the root directory.
-2. Run the build script:
-   ```bash
-   python src/build.py -y
-   ```
-   *(To package uploadable store zip files, add the `--zip` flag: `python src/build.py -y --zip`)*
-3. The build folders will be generated inside the `dist/` directory.
+### Standard Build
+To compile the files for local use (output goes to `dist/`):
+```bash
+python src/build.py --skip-prompt
+```
 
----
-
-## 🤝 How to Contribute
-
-We welcome contributions! Here is how you can help:
-
-1. **Find a Task:** Check out the project's GitHub Issues page for open tasks and feature ideas.
-2. **Fork the Repo:** Create your own copy of this repository on GitHub.
-3. **Create a Branch:** Create a branch for your feature (e.g., `git checkout -b feature/cool-new-setting`).
-4. **Make Changes:** Keep your code neat, format your files, and test them locally.
-5. **Submit a Pull Request:** Explain what you did and why, then submit it for review!
-
-## 💡 Credits & Acknowledgements
-
-* **Skip Silence Logic:** Inspired by and adapted from the open-source project [skip-silence by vantezzen](https://github.com/vantezzen/skip-silence).
+### Store Release Build (Zipped)
+To package the extension into store-uploadable zip archives:
+```bash
+python src/build.py --zip
+```
+*(This will ask if you want to automatically bump the version in `manifest.json` and will output ready-to-upload zip packages inside `dist/`.)*
 
 ---
 
-## 📄 License
+## 🤝 Contributing
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+Contributions are welcome! Please follow these guidelines:
+
+1. Fork this repository and create a new feature branch (`git checkout -b feature/awesome-feature`).
+2. Make your edits and ensure files are properly structured.
+3. Run `python src/build.py` to verify the code compiles and minifies correctly.
+4. Submit a Pull Request describing your changes.
+
+---
+
+## 📄 License & Credits
+
+* **License**: This project is licensed under the MIT License. See [LICENSE](LICENSE) for more details.
+* **Acknowledgements**: Silence skipping utilizes logic adapted from [skip-silence](https://github.com/vantezzen/skip-silence) by vantezzen.
