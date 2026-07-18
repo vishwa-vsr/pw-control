@@ -4,12 +4,13 @@
   # ⚡ PW Control
   ### Playback Speed & Focus Extension for Physics Wallah (`pw.live`)
 
+  [![Version: 1.0.4](https://img.shields.io/badge/version-1.0.4-blue.svg)](#)
   [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
   [![Chrome Web Store](https://img.shields.io/badge/Chrome-Extension-blue?logo=google-chrome&logoColor=white)](https://chromewebstore.google.com/detail/pw-control/ibepglcdcaanmkledmpgfapaffkhbadj)
   [![Firefox Add-ons](https://img.shields.io/badge/Firefox-Add--on-orange?logo=firefox-browser&logoColor=white)](https://addons.mozilla.org/en-US/firefox/addon/pw-control/)
   [![Edge Add-ons](https://img.shields.io/badge/Edge-Add--on-green?logo=microsoft-edge&logoColor=white)](https://microsoftedge.microsoft.com/addons/detail/pw-control/cnoboofnelihfmnjfbpbelpfdmogfaan)
 
-  **PW Control** is a premium, lightweight browser extension designed to optimize the learning experience for students on the `pw.live` portal. It seamlessly integrates a custom speed controller (clamped from `0.5x` up to `4.0x`) and independent layout toggles directly into the video player, removing distracting sidebar panels and other clutter.
+  **PW Control** is a simple, lightweight browser extension that gives you complete control over your video playback on the `pw.live` student portal. It adds a custom speed slider (from `0.5x` up to `4.0x`) and toggles to hide distracting screen elements (like chats, notes, and doubt boxes) directly inside the video player.
 
   [Direct Download](#-direct-store-downloads) • [Key Features](#-key-features) • [Project Structure](#-project-structure) • [How to Build](#-how-to-build)
 </div>
@@ -18,12 +19,12 @@
 
 ## 📖 Overview
 
-When learning online, speed and focus are key. Default video players often restrict speeds to standard values (like 2x) and include many distracting side panels (like live chats, doubts, and floating widgets). 
+Default online video players are often slow, limited to 2x speed, and filled with distracting sidebars. 
 
-**PW Control** solves this by:
-1. **Unlocking custom speed snapping** up to `4.0x` (with spacebar holding support).
-2. **Implementing a noise-gate Skip Silence scanner** that speeds up silent pauses automatically.
-3. **Decluttering the student interface** with toggleable rules that hide notes, doubtful Q&A tabs, and floating AI panels.
+This extension lets you:
+- **Set any speed** up to `4.0x` (with customized preset buttons and a hold-space speedup option).
+- **Skip silent parts** automatically using a smart sound scanner that fast-forwards through quiet gaps.
+- **Hide screen clutter** with simple toggles to hide notes, doubt boxes, and floating AI buttons.
 
 > [!NOTE]
 > PW Control is built with **zero external dependencies** (no frameworks, no heavy libraries) using vanilla JavaScript, HTML, and CSS. This keeps it incredibly light, memory-efficient, and fast.
@@ -127,6 +128,16 @@ Contributions are welcome! Please follow these guidelines:
 2. Make your edits and ensure files are properly structured.
 3. Run `python src/build.py` to verify the code compiles and minifies correctly.
 4. Submit a Pull Request describing your changes.
+
+---
+
+## 📢 Recent Updates (v1.0.4)
+
+Here are the latest updates and bug fixes in version `1.0.4`:
+* **Skip Intro Fix**: Resolved an issue in single-page navigation where the intro wouldn't skip when clicking on a new video. We now track the video URL source rather than the HTML element.
+* **Memory Leak Prevention**: The sound scanner now stops immediately when a video is closed or deleted, preventing silent polling in the background.
+* **Dashboard Crash Safety**: Added a safe wrapper around storage calls inside the settings menu to prevent visual freezes if local storage fails to load.
+* **Cleaned Codebase**: Deleted unused experimental audio files to keep the build light and clean.
 
 ---
 
