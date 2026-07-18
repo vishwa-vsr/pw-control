@@ -1,4 +1,5 @@
 (function () {
+
   let currentSpeed = 1.0;
   let activeVideo = null;
   let isSettingRate = false;
@@ -8,6 +9,7 @@
 
   // New Caching and Feature states
   let enableInstantHide = false;
+  let enablePiP = true;
   let cachedVideo = null;
   let cachedSettingsBtn = null;
   let cachedFullscreenBtn = null;
@@ -30,6 +32,23 @@
   let spacePressTimer = null;
   let isHoldingSpace = false;
   let speedBeforeHold = 1.0;
+
+  // Skip Silence and Skip Intro configuration states
+  let enableSkipSilence = false;
+  let silenceSpeed = 5.0;
+  let silenceThreshold = -50;
+  let silenceDuration = 0.5;
+  let skipIntroTime = 0;
+
+  // Skip Silence: Shared global AudioContext and per-element audio graph cache
+  let sharedAudioCtx = null;
+  const audioGraphCache = new WeakMap();
+  let isSilentStateActive = false;
+  let silenceMsCount = 0;
+  let lastSkippedVideo = null;
+  let silenceCheckInterval = null;
+  let activeSilenceVideo = null;
+  let currentVolumeDb = -100; // Live volume tracking for popup visualizer
 
   // Helper to step speed up or down by 0.1, clamped to 0.5–4.0
   function stepSpeed(direction) {
@@ -65,7 +84,7 @@
     hideDoubt: 'pwc-hide-doubt',
     hideChat: 'pwc-hide-chat',
     hideNotes: 'pwc-hide-notes',
-    hideCC: 'pwc-hide-cc',
+    hideNoteTimeline: 'pwc-hide-notetimeline',
     hideSpeed: 'pwc-hide-speed',
     hideSetting: 'pwc-hide-setting',
     hideTimeLine: 'pwc-hide-timeline',
@@ -78,7 +97,7 @@
     hideDoubt: false,
     hideChat: false,
     hideNotes: false,
-    hideCC: false,
+    hideNoteTimeline: false,
     hideSpeed: false,
     hideSetting: false,
     hideTimeLine: false,
@@ -92,7 +111,7 @@
     }
     try {
       chrome.storage.local.get(
-        ['preferredSpeed', 'hideAskAI', 'hideDoubt', 'hideChat', 'hideNotes', 'hideCC', 'hideSpeed', 'hideSetting', 'hideTimeLine', 'hideTimeText', 'enableInstantHide', 'enableHotkeys', 'disableScroll', 'holdSpaceSpeedUp', 'holdSpaceSpeed', 'keySpeedUp', 'keySlowDown', 'keyReset', 'snapPoints', 'extensionEnabled'], 
+        ['preferredSpeed', 'hideAskAI', 'hideDoubt', 'hideChat', 'hideNotes', 'hideNoteTimeline', 'hideSpeed', 'hideSetting', 'hideTimeLine', 'hideTimeText', 'enableInstantHide', 'enableHotkeys', 'disableScroll', 'holdSpaceSpeedUp', 'holdSpaceSpeed', 'keySpeedUp', 'keySlowDown', 'keyReset', 'snapPoints', 'extensionEnabled', 'enablePiP', 'enableSkipSilence', 'silenceSpeed', 'silenceThreshold', 'silenceDuration', 'skipIntroTime'], 
         function (result) {
           try {
             if (chrome.runtime && chrome.runtime.id) {
@@ -145,6 +164,7 @@
       }
     }
 
+    enablePiP = result.enablePiP !== false;
     enableInstantHide = !!result.enableInstantHide;
     enableHotkeys = !!result.enableHotkeys;
     disableScroll = !!result.disableScroll;
@@ -154,12 +174,25 @@
     keySlowDown = result.keySlowDown || 'j';
     keyReset = result.keyReset || 'l';
 
+    enableSkipSilence = !!result.enableSkipSilence;
+    silenceSpeed = result.silenceSpeed !== undefined ? parseFloat(result.silenceSpeed) : 5.0;
+    silenceThreshold = result.silenceThreshold !== undefined ? parseInt(result.silenceThreshold) : -50;
+    silenceDuration = result.silenceDuration !== undefined ? parseFloat(result.silenceDuration) : 0.5;
+    skipIntroTime = result.skipIntroTime !== undefined ? parseInt(result.skipIntroTime) : 0;
+
     if (result.snapPoints && Array.isArray(result.snapPoints) && result.snapPoints.length === 4) {
       snapPoints = result.snapPoints.map(v => parseFloat(v));
     }
 
     applySettingsHTML(hideSettings);
     applyDistractorsState();
+
+    if (activeVideo) {
+      setupAudioAnalysis(activeVideo);
+      if (enableSkipSilence) {
+        handleSkipIntro(activeVideo);
+      }
+    }
   });
 
   // Listen for storage changes from the settings popup
@@ -186,6 +219,10 @@
               enableInstantHide = !!changes.enableInstantHide.newValue;
               changed = true;
             }
+            if (changes.hasOwnProperty('enablePiP')) {
+              enablePiP = changes.enablePiP.newValue !== false;
+              changed = true;
+            }
             if (changes.hasOwnProperty('enableHotkeys')) {
               enableHotkeys = !!changes.enableHotkeys.newValue;
             }
@@ -206,6 +243,37 @@
             }
             if (changes.hasOwnProperty('keyReset')) {
               keyReset = changes.keyReset.newValue;
+            }
+
+            if (changes.hasOwnProperty('enableSkipSilence')) {
+              enableSkipSilence = !!changes.enableSkipSilence.newValue;
+              if (activeVideo) {
+                setupAudioAnalysis(activeVideo);
+                if (enableSkipSilence) {
+                  handleSkipIntro(activeVideo);
+                }
+              }
+            }
+            if (changes.hasOwnProperty('silenceSpeed')) {
+              silenceSpeed = parseFloat(changes.silenceSpeed.newValue);
+              if (activeVideo && enableSkipSilence) {
+                setupAudioAnalysis(activeVideo);
+              }
+            }
+            if (changes.hasOwnProperty('silenceThreshold')) {
+              silenceThreshold = parseInt(changes.silenceThreshold.newValue);
+            }
+            if (changes.hasOwnProperty('silenceDuration')) {
+              silenceDuration = parseFloat(changes.silenceDuration.newValue);
+              if (activeVideo && enableSkipSilence) {
+                setupAudioAnalysis(activeVideo);
+              }
+            }
+            if (changes.hasOwnProperty('skipIntroTime')) {
+              skipIntroTime = parseInt(changes.skipIntroTime.newValue);
+              if (activeVideo) {
+                handleSkipIntro(activeVideo);
+              }
             }
 
             // Sync custom snap points in real-time
@@ -255,9 +323,12 @@
 
   // Helper to find the active video element (selects the video with largest display area)
   function getActiveVideo() {
-    if (cachedVideo && cachedVideo.isConnected) {
-      return cachedVideo;
+    // If a video is currently in Picture-in-Picture, it is definitely the active one!
+    if (document.pictureInPictureElement) {
+      cachedVideo = document.pictureInPictureElement;
+      return document.pictureInPictureElement;
     }
+
     const videos = findVideos(document);
     if (videos.length === 0) {
       cachedVideo = null;
@@ -269,8 +340,11 @@
     }
     
     let mainVideo = videos[0];
-    let maxArea = 0;
+    let maxArea = -1;
     for (const v of videos) {
+      const isVisible = v.offsetWidth > 0 && v.offsetHeight > 0;
+      if (!isVisible) continue;
+
       const area = (v.videoWidth || v.clientWidth || 0) * (v.videoHeight || v.clientHeight || 0);
       if (area > maxArea) {
         maxArea = area;
@@ -524,13 +598,7 @@
     }
     if (isLeaf && (leafText === 'notes' || leafText === 'study notes' || leafText === 'add note')) return 'notes';
 
-    // 3. CC / Subtitles — use VideoJS-specific classes and exact keyword matches only.
-    //    AVOID matching 'caption' — it appears 200+ times in VideoJS settings dialogs
-    //    and causes every toolbar button to be falsely classified as CC.
-    if (/\bcc\b/.test(attrs) || className.includes('vjs-setting-subtitles') || className.includes('vjs-icon-subtitles') || attrs.includes('closed-caption')) {
-      return 'cc';
-    }
-    if (isLeaf && (leafText === 'cc' || leafText === 'subtitles' || leafText === 'captions' || leafText === 'subtitle')) return 'cc';
+
 
     // 4. Doubt / Q&A controls
     if (attrs.includes('doubt') || attrs.includes('qna') || attrs.includes('question')) {
@@ -543,6 +611,13 @@
       return 'chat';
     }
     if (isLeaf && leafText === 'chat') return 'chat';
+
+    // 6. Note Timeline controls (avoid matching video progress timeline seekbar)
+    if (!className.includes('progress') && !className.includes('play-progress') && !id.includes('video-progress')) {
+      if (className.includes('timeline') || id.includes('timeline') || title.includes('timeline') || ariaLabel.includes('timeline')) {
+        return 'notetimeline';
+      }
+    }
 
     return null;
   }
@@ -784,6 +859,69 @@
     }, 800);
   }
 
+  // Display a visual warning/info toast overlay inside the player using safe DOM APIs
+  function showInfoToast(text) {
+    const video = getActiveVideo();
+    if (!video) return;
+    const playerContainer = video.parentElement;
+    if (!playerContainer) return;
+
+    let toast = playerContainer.querySelector('#pwc-speed-toast');
+    if (!toast) {
+      toast = document.createElement('div');
+      toast.id = 'pwc-speed-toast';
+      toast.className = 'pwc-speed-toast';
+      playerContainer.appendChild(toast);
+    }
+
+    toast.textContent = '';
+
+    const svgNS = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(svgNS, 'svg');
+    svg.setAttribute('viewBox', '0 0 24 24');
+    svg.setAttribute('fill', 'none');
+    svg.setAttribute('stroke', '#eaaa2e');
+    svg.setAttribute('stroke-width', '2.2');
+    svg.setAttribute('stroke-linecap', 'round');
+    svg.setAttribute('stroke-linejoin', 'round');
+
+    const path = document.createElementNS(svgNS, 'path');
+    path.setAttribute('d', 'M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z');
+    svg.appendChild(path);
+
+    const line = document.createElementNS(svgNS, 'line');
+    line.setAttribute('x1', '12');
+    line.setAttribute('y1', '9');
+    line.setAttribute('x2', '12');
+    line.setAttribute('y2', '13');
+    svg.appendChild(line);
+
+    const circle = document.createElementNS(svgNS, 'circle');
+    circle.setAttribute('cx', '12');
+    circle.setAttribute('cy', '17');
+    circle.setAttribute('r', '0.5');
+    circle.setAttribute('fill', 'currentColor');
+    svg.appendChild(circle);
+
+    toast.appendChild(svg);
+
+    const span = document.createElement('span');
+    span.textContent = text;
+    toast.appendChild(span);
+
+    if (toastTimeout) {
+      clearTimeout(toastTimeout);
+    }
+
+    toast.classList.remove('pwc-toast-visible');
+    toast.offsetHeight; 
+    toast.classList.add('pwc-toast-visible');
+
+    toastTimeout = setTimeout(() => {
+      toast.classList.remove('pwc-toast-visible');
+    }, 1800);
+  }
+
   // Helper to find the video timeline progress bar
   function findTimeline() {
     if (cachedTimeline && cachedTimeline.isConnected) {
@@ -925,9 +1063,9 @@
         if (parent) {
           const siblings = Array.from(parent.children);
           
-          // Filter out our own injected speed control and non-element nodes
+          // Filter out our own injected speed control, pip button, and non-element nodes
           const nativeButtons = siblings.filter(el => {
-            return el.nodeType === 1 && el.id !== 'pwc-speed-control';
+            return el.nodeType === 1 && el.id !== 'pwc-speed-control' && el.id !== 'pwc-pip-btn';
           });
 
           // Find settings button index in the native buttons list
@@ -943,13 +1081,13 @@
                 // Notes (1 button left of Settings)
                 setHidden(btn, activeSettings.hideNotes);
               } else if (offset === 2) {
-                // CC Subtitles (2 buttons left of Settings)
-                setHidden(btn, activeSettings.hideCC);
+                // Note Timeline (2 buttons left of Settings)
+                setHidden(btn, activeSettings.hideNoteTimeline);
               } else if (offset === 3) {
-                // Doubt Q&A (3 buttons left of Settings / 1 left of CC)
+                // Doubt Q&A (3 buttons left of Settings)
                 setHidden(btn, activeSettings.hideDoubt);
               } else if (offset === 4) {
-                // Live Chat (4 buttons left of Settings / 2 left of CC)
+                // Live Chat (4 buttons left of Settings)
                 setHidden(btn, activeSettings.hideChat);
               } else {
                 // Fallback for other buttons (like Ask AI if inside toolbar)
@@ -962,8 +1100,8 @@
                   setHidden(btn, activeSettings.hideDoubt);
                 } else if (type === 'notes') {
                   setHidden(btn, activeSettings.hideNotes);
-                } else if (type === 'cc') {
-                  setHidden(btn, activeSettings.hideCC);
+                } else if (type === 'notetimeline') {
+                  setHidden(btn, activeSettings.hideNoteTimeline);
                 }
               }
             });
@@ -977,8 +1115,8 @@
                 setHidden(btn, activeSettings.hideDoubt);
               } else if (type === 'notes') {
                 setHidden(btn, activeSettings.hideNotes);
-              } else if (type === 'cc') {
-                setHidden(btn, activeSettings.hideCC);
+              } else if (type === 'notetimeline') {
+                setHidden(btn, activeSettings.hideNoteTimeline);
               } else if (type === 'askai') {
                 setHidden(btn, activeSettings.hideAskAI);
               }
@@ -1058,17 +1196,31 @@
       try {
         activeVideo.removeEventListener('ratechange', onRateChange);
         activeVideo.removeEventListener('play', onVideoPlay);
+        activeVideo.removeEventListener('playing', onVideoPlaying);
+        activeVideo.removeEventListener('loadedmetadata', onVideoLoadedMetadata);
+        activeVideo.removeEventListener('enterpictureinpicture', onEnterPiP);
+        activeVideo.removeEventListener('leavepictureinpicture', onLeavePiP);
       } catch (e) {}
     }
 
     activeVideo = video;
     activeVideo.addEventListener('ratechange', onRateChange);
     activeVideo.addEventListener('play', onVideoPlay);
+    activeVideo.addEventListener('playing', onVideoPlaying);
+    activeVideo.addEventListener('loadedmetadata', onVideoLoadedMetadata);
+    activeVideo.addEventListener('enterpictureinpicture', onEnterPiP);
+    activeVideo.addEventListener('leavepictureinpicture', onLeavePiP);
+
+    if (activeVideo.readyState >= 1) {
+      handleSkipIntro(activeVideo);
+    }
+    setupAudioAnalysis(activeVideo);
   }
 
   // Update speed UI when speed changes (syncs with native controls)
   function onRateChange() {
     if (isSettingRate || !activeVideo) return;
+    if (isSilentStateActive || activeVideo.playbackRate === silenceSpeed) return; // Ignore speed changes while skipping silence
     currentSpeed = activeVideo.playbackRate;
     updateUI();
     showSpeedToast(currentSpeed);
@@ -1079,6 +1231,24 @@
     setTimeout(() => {
       applySpeedToActiveVideo();
     }, 200);
+    setupAudioAnalysis(activeVideo);
+  }
+
+  function onVideoPlaying() {
+    setupAudioAnalysis(activeVideo);
+  }
+
+  function onVideoLoadedMetadata() {
+    handleSkipIntro(activeVideo);
+    setupAudioAnalysis(activeVideo);
+  }
+
+  function onEnterPiP() {
+    updatePiPButtonUI(true);
+  }
+
+  function onLeavePiP() {
+    updatePiPButtonUI(false);
   }
 
   // Save the speed setting and apply it to the video
@@ -1287,7 +1457,6 @@
       }
     }
   }, true); // useCapture = true
-
   // Safety net: Reset hold-space state when tab loses focus
   document.addEventListener('visibilitychange', () => {
     if (document.hidden && isHoldingSpace) {
@@ -1299,6 +1468,8 @@
       isHoldingSpace = false;
     }
   });
+
+
 
   // Listen to keyboard shortcuts (bubble phase)
   document.addEventListener('keydown', (e) => {
@@ -1426,6 +1597,204 @@
     }
   }
 
+  function stylePiPButton(btn) {
+    btn.style.setProperty('height', '100%', 'important');
+    btn.style.setProperty('width', '36px', 'important');
+    btn.style.setProperty('display', 'inline-flex', 'important');
+    btn.style.setProperty('align-items', 'center', 'important');
+    btn.style.setProperty('justify-content', 'center', 'important');
+    btn.style.setProperty('z-index', '1000', 'important');
+    btn.style.setProperty('background', 'transparent', 'important');
+    btn.style.setProperty('border', 'none', 'important');
+    btn.style.setProperty('color', 'rgba(255, 255, 255, 0.75)', 'important');
+    btn.style.setProperty('cursor', 'pointer', 'important');
+    btn.style.setProperty('padding', '0', 'important');
+    btn.style.setProperty('margin', '0 6px', 'important');
+    btn.style.setProperty('transition', 'color 0.2s ease, transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.25s ease', 'important');
+
+    if (!btn.pwcHasHoverListeners) {
+      btn.pwcHasHoverListeners = true;
+      btn.addEventListener('mouseenter', () => {
+        btn.style.setProperty('color', '#ffffff', 'important');
+        btn.style.setProperty('transform', 'scale(1.15)', 'important');
+      });
+      btn.addEventListener('mouseleave', () => {
+        btn.style.setProperty('color', 'rgba(255, 255, 255, 0.75)', 'important');
+        btn.style.setProperty('transform', 'scale(1)', 'important');
+      });
+    }
+  }
+
+  function setupPiPButtonListeners(btn) {
+    if (btn.pwcHasClickEventListener) return;
+    btn.pwcHasClickEventListener = true;
+
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      // Do NOT call e.preventDefault() here! In some Chromium browsers, preventDefault() on user
+      // gestures flags the activation as consumed/cancelled, blocking video.requestPictureInPicture().
+
+      const video = getActiveVideo();
+      if (!video) return;
+
+      // Force-enable Picture-in-Picture in case the player script locked it
+      video.disablePictureInPicture = false;
+
+      if (video.readyState === 0) {
+        showInfoToast("Video still loading... Try again.");
+        return;
+      }
+
+      try {
+        if (document.pictureInPictureElement) {
+          await document.exitPictureInPicture();
+        } else {
+          await video.requestPictureInPicture();
+        }
+      } catch (err) {
+        console.error("PW Control: Failed to toggle Picture-in-Picture:", err);
+        showInfoToast("Failed to enter Picture-in-Picture.");
+      }
+    }, true);
+  }
+
+  // Inject and manage the Picture-in-Picture button inside the controls bar
+  function injectPiPButton() {
+    const video = getActiveVideo();
+    if (!video) return;
+
+    if (typeof video.requestPictureInPicture !== 'function') return;
+
+    const exactBtn = document.getElementById('pwc-pip-btn');
+
+    // If disabled, remove the button if it exists
+    if (!extensionEnabled || !enablePiP) {
+      if (exactBtn) {
+        exactBtn.remove();
+      }
+      return;
+    }
+
+    // Determine the control bar container to inject into
+    const footerRight = document.getElementById('footer-right-section');
+    const controlBar = footerRight ? footerRight.parentElement : null;
+    
+    // Fallback: search for settings/fullscreen buttons and trace their parent container
+    let fallbackControlBar = null;
+    if (!controlBar) {
+      const settingsBtn = findSettingsButton();
+      const fullscreenBtn = findFullscreenButton();
+      const refBtn = settingsBtn || fullscreenBtn;
+      if (refBtn) {
+        fallbackControlBar = getToolbarContainer(refBtn);
+      }
+    }
+
+    const parent = controlBar || fallbackControlBar || footerRight;
+    if (!parent) return;
+
+    // Target the light DOM container so getElementById can find the button in subsequent runs!
+    const targetContainer = footerRight || parent;
+
+    // Create and inject the button if it doesn't exist
+    if (!exactBtn) {
+      const btn = document.createElement('button');
+      btn.id = 'pwc-pip-btn';
+      btn.className = 'pwc-pip-btn';
+      btn.type = 'button';
+      stylePiPButton(btn);
+
+      // Insert right before fullscreen button if found inside the same parent, otherwise append
+      const fullscreenBtn = findFullscreenButton();
+      if (fullscreenBtn && fullscreenBtn.parentElement === targetContainer) {
+        targetContainer.insertBefore(btn, fullscreenBtn);
+      } else {
+        targetContainer.appendChild(btn);
+      }
+
+      
+      setupPiPButtonListeners(btn);
+      // Initial UI draw
+      updatePiPButtonUI(document.pictureInPictureElement === video);
+    } else {
+      stylePiPButton(exactBtn);
+      // Ensure it is in the correct position if the toolbar rebuilt
+      if (exactBtn.parentElement !== targetContainer) {
+        const fullscreenBtn = findFullscreenButton();
+        if (fullscreenBtn && fullscreenBtn.parentElement === targetContainer) {
+          targetContainer.insertBefore(exactBtn, fullscreenBtn);
+        } else {
+          targetContainer.appendChild(exactBtn);
+        }
+      }
+      setupPiPButtonListeners(exactBtn);
+      // Update UI state based on current PiP state
+      updatePiPButtonUI(document.pictureInPictureElement === video);
+    }
+  }
+
+  function updatePiPButtonUI(isInPiP) {
+    const btn = document.getElementById('pwc-pip-btn');
+    if (!btn) return;
+
+    btn.textContent = '';
+    btn.setAttribute('title', isInPiP ? 'Exit Picture-in-Picture' : 'Picture-in-Picture');
+
+    const svgNS = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(svgNS, 'svg');
+    svg.setAttribute('viewBox', '0 0 24 24');
+    svg.setAttribute('fill', 'none');
+    svg.setAttribute('stroke', 'currentColor');
+    svg.setAttribute('stroke-width', '2.3');
+    svg.setAttribute('stroke-linecap', 'round');
+    svg.setAttribute('stroke-linejoin', 'round');
+
+    // Inline style for SVG to make sure it renders even inside Shadow DOM
+    svg.style.setProperty('width', '22px', 'important');
+    svg.style.setProperty('height', '22px', 'important');
+    svg.style.setProperty('stroke', 'currentColor', 'important');
+    svg.style.setProperty('stroke-width', '2.3', 'important');
+    svg.style.setProperty('fill', 'none', 'important');
+    svg.style.setProperty('transition', 'transform 0.2s ease', 'important');
+
+    if (isInPiP) {
+      // Exit PiP Icon
+      const rect = document.createElementNS(svgNS, 'rect');
+      rect.setAttribute('x', '2');
+      rect.setAttribute('y', '4');
+      rect.setAttribute('width', '20');
+      rect.setAttribute('height', '16');
+      rect.setAttribute('rx', '2');
+      rect.setAttribute('ry', '2');
+      svg.appendChild(rect);
+
+      const path = document.createElementNS(svgNS, 'path');
+      path.setAttribute('d', 'M10 10l-4-4m0 0h3m-3 0v3');
+      svg.appendChild(path);
+    } else {
+      // Enter PiP Icon
+      const rect1 = document.createElementNS(svgNS, 'rect');
+      rect1.setAttribute('x', '2');
+      rect1.setAttribute('y', '4');
+      rect1.setAttribute('width', '20');
+      rect1.setAttribute('height', '16');
+      rect1.setAttribute('rx', '2');
+      rect1.setAttribute('ry', '2');
+      svg.appendChild(rect1);
+
+      const rect2 = document.createElementNS(svgNS, 'rect');
+      rect2.setAttribute('x', '13');
+      rect2.setAttribute('y', '12');
+      rect2.setAttribute('width', '7');
+      rect2.setAttribute('height', '6');
+      rect2.setAttribute('rx', '1');
+      rect2.setAttribute('fill', 'currentColor');
+      rect2.style.setProperty('fill', 'currentColor', 'important');
+      svg.appendChild(rect2);
+    }
+    btn.appendChild(svg);
+  }
+
   // Throttled execution of DOM monitoring to optimize performance
   let monitorTimeout = null;
   let monitorIntervalId = null;
@@ -1452,6 +1821,167 @@
     }
   }
 
+  // ── Skip Silence Scanner ──────────────────────────────────────────────
+  // Uses a shared global AudioContext + AnalyserNode (no external files needed).
+  // No crossorigin attribute (blob: URLs don't support CORS).
+  // Audio graph cached per video element in a WeakMap.
+
+  function getSharedAudioCtx() {
+    if (!sharedAudioCtx) {
+      const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+      sharedAudioCtx = new AudioContextClass();
+    }
+    return sharedAudioCtx;
+  }
+
+  function resumeAudioCtx(ctx) {
+    if (ctx.state === 'suspended') {
+      ctx.resume();
+      const handler = () => ctx.resume();
+      document.addEventListener('pointerdown', handler, { once: true, capture: true });
+      document.addEventListener('keydown', handler, { once: true, capture: true });
+    }
+  }
+
+  function getAudioGraph(video) {
+    let cached = audioGraphCache.get(video);
+    if (cached) return cached;
+
+    const ctx = getSharedAudioCtx();
+    const source   = ctx.createMediaElementSource(video);
+    const analyser = ctx.createAnalyser();
+    analyser.fftSize = 256;
+
+    // source -> analyser -> destination (keeps audio playing through speakers)
+    source.connect(analyser);
+    analyser.connect(ctx.destination);
+
+    const graph = { analyser };
+    audioGraphCache.set(video, graph);
+    return graph;
+  }
+
+  function setupAudioAnalysis(video) {
+    if (!video) return;
+    if (!enableSkipSilence) {
+      cleanupAudioAnalysis();
+      return;
+    }
+
+    // Don't re-setup for the same video
+    if (activeSilenceVideo === video && silenceCheckInterval) return;
+
+    try {
+      const ctx = getSharedAudioCtx();
+      resumeAudioCtx(ctx);
+
+      const graph = getAudioGraph(video);
+      activeSilenceVideo = video;
+
+      // Start the polling loop
+      startSilenceCheckLoop(video, graph);
+    } catch (e) {
+      console.warn('PW Control: Skip Silence setup failed:', e);
+    }
+  }
+
+  function cleanupAudioAnalysis() {
+    if (silenceCheckInterval) {
+      clearInterval(silenceCheckInterval);
+      silenceCheckInterval = null;
+    }
+
+    if (isSilentStateActive) {
+      isSilentStateActive = false;
+      const video = activeSilenceVideo || getActiveVideo();
+      if (video) {
+        isSettingRate = true;
+        video.playbackRate = currentSpeed;
+        setTimeout(() => {
+          isSettingRate = false;
+        }, 150);
+      }
+    }
+
+    activeSilenceVideo = null;
+    silenceMsCount = 0;
+    currentVolumeDb = -100;
+  }
+
+  function startSilenceCheckLoop(video, graph) {
+    if (silenceCheckInterval) {
+      clearInterval(silenceCheckInterval);
+    }
+
+    const analyser = graph.analyser;
+    const bufferLength = analyser.fftSize;
+    const dataArray = new Uint8Array(bufferLength);
+    const checkIntervalMs = 100;
+
+    silenceCheckInterval = setInterval(() => {
+      if (!enableSkipSilence || !video || video.paused || video.ended || video.readyState < 2) {
+        return;
+      }
+
+      const ctx = getSharedAudioCtx();
+      if (ctx.state !== 'running') {
+        resumeAudioCtx(ctx);
+        return;
+      }
+
+      // Read time-domain waveform and compute RMS
+      analyser.getByteTimeDomainData(dataArray);
+
+      let sumSquares = 0;
+      for (let i = 0; i < bufferLength; i++) {
+        const sample = (dataArray[i] - 128) / 128;
+        sumSquares += sample * sample;
+      }
+      const rms = Math.sqrt(sumSquares / bufferLength);
+      currentVolumeDb = rms > 0 ? 20 * Math.log10(rms) : -100;
+
+      // Silence detection logic
+      const isCurrentlySilent = currentVolumeDb < silenceThreshold;
+
+      if (isCurrentlySilent) {
+        silenceMsCount += checkIntervalMs;
+        const requiredSilenceMs = silenceDuration * 1000;
+
+        if (silenceMsCount >= requiredSilenceMs && !isSilentStateActive) {
+          isSilentStateActive = true;
+          isSettingRate = true;
+          video.playbackRate = silenceSpeed;
+          setTimeout(() => {
+            isSettingRate = false;
+          }, 150);
+        }
+      } else {
+        silenceMsCount = 0;
+        if (isSilentStateActive) {
+          isSilentStateActive = false;
+          isSettingRate = true;
+          video.playbackRate = currentSpeed;
+          setTimeout(() => {
+            isSettingRate = false;
+          }, 150);
+        }
+      }
+    }, checkIntervalMs);
+  }
+
+  // Skip Intro Logic
+  function handleSkipIntro(video) {
+    if (!enableSkipSilence || skipIntroTime <= 0 || lastSkippedVideo === video) {
+      return;
+    }
+    
+    if (video.currentTime < skipIntroTime) {
+      video.currentTime = skipIntroTime;
+      showInfoToast("Skipped intro (" + skipIntroTime + "s)");
+    }
+    lastSkippedVideo = video;
+  }
+
   // Main monitoring function
   function monitor() {
     if (isModifyingDOM) return;
@@ -1464,6 +1994,7 @@
       try {
         injectSpeedControl();
         injectInstantHideButton();
+        injectPiPButton();
       } finally {
         isModifyingDOM = false;
       }
@@ -1484,4 +2015,25 @@
   // Initial execution
   monitor();
   manageMonitorInterval();
+
+  // Listen for popup connections to send real-time visualizer stats
+  if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.onConnect) {
+    chrome.runtime.onConnect.addListener((port) => {
+      if (port.name !== "popup-connection") return;
+
+      const interval = setInterval(() => {
+        const isScanning = !!(enableSkipSilence && sharedAudioCtx && sharedAudioCtx.state === 'running' && activeSilenceVideo && !activeSilenceVideo.paused);
+        port.postMessage({
+          volumeDb: currentVolumeDb,
+          thresholdDb: silenceThreshold,
+          isSilent: isSilentStateActive,
+          isScanning: isScanning
+        });
+      }, 50);
+
+      port.onDisconnect.addListener(() => {
+        clearInterval(interval);
+      });
+    });
+  }
 })();

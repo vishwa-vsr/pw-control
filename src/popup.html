@@ -196,6 +196,77 @@
                 <span class="switch-slider"></span>
               </label>
             </div>
+
+            <!-- Option 10: Picture-in-Picture Button -->
+            <div class="feature-card">
+              <div class="feature-info">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <label for="enable-pip-toggle" class="feature-title">Picture-in-Picture Button</label>
+                  <span class="beta-badge">Beta</span>
+                </div>
+              </div>
+              <label class="switch" aria-label="Toggle Picture-in-Picture Button">
+                <input type="checkbox" id="enable-pip-toggle">
+                <span class="switch-slider"></span>
+              </label>
+            </div>
+
+            <!-- Option 11: Skip Silence / Skip Intro -->
+            <div class="feature-card">
+              <div class="feature-info">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <label for="enable-skipsilence-toggle" class="feature-title">Skip Silence / Skip Intro</label>
+                  <span class="beta-badge">Beta</span>
+                </div>
+              </div>
+              <label class="switch" aria-label="Toggle Skip Silence / Skip Intro">
+                <input type="checkbox" id="enable-skipsilence-toggle">
+                <span class="switch-slider"></span>
+              </label>
+            </div>
+
+            <!-- Skip Silence / Skip Intro Configuration Panel -->
+            <div class="feature-config-panel disabled" id="skipsilence-config-container">
+              <div class="config-item">
+                <span class="config-label">Silence Speed</span>
+                <div class="config-slider-group">
+                  <input type="range" id="silence-speed" min="1.5" max="8.0" step="0.5" value="5.0">
+                  <span class="config-val" id="silence-speed-val">5.0x</span>
+                </div>
+              </div>
+              <div class="config-item">
+                <span class="config-label">Volume Threshold</span>
+                <div class="config-slider-group">
+                  <input type="range" id="silence-threshold" min="-70" max="-30" step="1" value="-50">
+                  <span class="config-val" id="silence-threshold-val">-50 dB</span>
+                </div>
+              </div>
+              <!-- Real-time Volume Visualizer -->
+              <div class="config-item" id="silence-visualizer-container">
+                <span class="config-label">Live Volume</span>
+                <div class="visualizer-bar-wrapper">
+                  <div class="visualizer-bar-track">
+                    <div id="visualizer-bar-fill" class="visualizer-bar-fill"></div>
+                    <div id="visualizer-threshold-marker" class="visualizer-threshold-marker"></div>
+                  </div>
+                  <span class="config-val" id="visualizer-db-val">OFF</span>
+                </div>
+              </div>
+              <div class="config-item">
+                <span class="config-label">Silence Duration</span>
+                <div class="config-slider-group">
+                  <input type="range" id="silence-duration" min="0.1" max="2.0" step="0.1" value="0.5">
+                  <span class="config-val" id="silence-duration-val">0.5s</span>
+                </div>
+              </div>
+              <div class="config-item">
+                <span class="config-label">Skip Intro Time</span>
+                <div class="config-slider-group">
+                  <input type="range" id="skip-intro" min="0" max="180" step="5" value="0">
+                  <span class="config-val" id="skip-intro-val">Off</span>
+                </div>
+              </div>
+            </div>
           </div>
         </section>
       </div>
@@ -250,21 +321,16 @@
                 <input type="checkbox" id="hide-notes-toggle">
                 <span class="switch-slider"></span>
               </label>
-            </div>
-
-            <!-- Option 4: Hide CC -->
+            </div>            <!-- Option 4: Hide Note Timeline -->
             <div class="feature-card">
               <div class="feature-info">
-                <label for="hide-cc-toggle" class="feature-title">Hide note timeline</label>
+                <label for="hide-notetimeline-toggle" class="feature-title">Hide Note Timeline</label>
               </div>
-              <label class="switch" aria-label="Toggle Hide CC">
-                <input type="checkbox" id="hide-cc-toggle">
+              <label class="switch" aria-label="Toggle Hide Note Timeline">
+                <input type="checkbox" id="hide-notetimeline-toggle">
                 <span class="switch-slider"></span>
               </label>
             </div>
-
-
-
             <!-- Option 6: Hide Settings Icon -->
             <div class="feature-card">
               <div class="feature-info">
@@ -317,7 +383,7 @@
         </svg>
         Rate Us
       </a>
-      <a href="https://github.com/vishwa-vsr/pw-control/blob/main/CHANGELOG.md" target="_blank" class="version-link" rel="noopener noreferrer">v1.0.3</a>
+      <a href="https://github.com/vishwa-vsr/pw-control/blob/main/CHANGELOG.md" target="_blank" class="version-link" rel="noopener noreferrer">v1.0.4</a>
     </footer>
   </div>
   <script src="popup.js"></script>

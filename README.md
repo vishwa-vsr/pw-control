@@ -40,7 +40,8 @@
 | **Quick Presets:** Define 4 custom speed buttons to quickly switch to your favorite rates. | **Disable Doubt Q&A:** Hide the question-bubble doubt controls. |
 | **Scroll to Adjust:** Hover over the speed widget and scroll your mouse wheel. | **Disable Live Chat:** Clean up the chat bubble area. |
 | **Hold Space to Speed Up:** Hold <kbd>Spacebar</kbd> to play at a custom speed (default: `2.0x`). | **Disable Study Notes:** Hide attachments and note panels. |
-| **Toast Speed HUD:** Sleek overlay showing your active speed when updated. | **Disable CC Subtitles:** Hide player caption controls. |
+| **Skip Silence / Skip Intro:** Speed up quiet pauses (up to 8x) and skip video intro logos automatically. | **Disable Note Timeline:** Hide the lecture slide screenshot timeline panel. |
+| **Toast Speed HUD:** Sleek overlay showing your active speed when updated. | **Disable Settings Icon:** Hide player settings gear controls. |
 
 ### ⌨️ Hotkey Bindings
 You can configure keyboard shortcuts to control playback. (Defaults: <kbd>></kbd> to Speed Up, <kbd><</kbd> to Slow Down, and <kbd>r</kbd> to Reset).
@@ -86,6 +87,10 @@ We welcome contributions! Here is how you can help:
 3. **Create a Branch:** Create a branch for your feature (e.g., `git checkout -b feature/cool-new-setting`).
 4. **Make Changes:** Keep your code neat, format your files, and test them locally.
 5. **Submit a Pull Request:** Explain what you did and why, then submit it for review!
+
+## 💡 Credits & Acknowledgements
+
+* **Skip Silence Logic:** Inspired by and adapted from the open-source project [skip-silence by vantezzen](https://github.com/vantezzen/skip-silence).
 
 ---
 

@@ -5,6 +5,16 @@ All notable changes to the **PW Control** extension project will be documented i
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
+## [1.0.4] - 2026-07-18
+
+### Added
+- **Skip Silence & Skip Intro**: Real-time volume levels scanner using Web Audio API that fast-forwards the video (up to 8.0x speed) during silent intervals (e.g. teacher writing on whiteboard) and automatically mutes the sped-up track. Automatically seeks forward by configured seconds on class load to skip intros. Exposes config settings (speed, dB volume threshold, silent pause delay, intro skip duration) in the popup dashboard.
+- **Picture-in-Picture (PiP) Mode**: Added a dedicated Picture-in-Picture button on the player control bar next to the fullscreen button. Clicking it lets users watch lectures in a floating, always-on-top window.
+- **PiP Popup Setting Toggle**: Added a toggle switch in the extension popup dashboard to enable or disable the Picture-in-Picture button.
+- **Beta Badges**: Appended a decorative "Beta" pill next to the Picture-in-Picture Button and Skip Silence / Skip Intro labels in the settings popup dashboard.
+
+### Fixed
+- **Shadow DOM Icon Styling**: Applied inline styles directly to the Picture-in-Picture button and its SVG elements, resolving an issue where the icon failed to render or appeared blank when inserted inside the video player's Shadow DOM.
 
 ## [1.0.3] - 2026-07-13
 

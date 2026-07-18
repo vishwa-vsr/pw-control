@@ -209,11 +209,13 @@ html.pwc-hide-notes #footer-right-section > [title*="note" i] {
   display: none !important;
 }
 
-/* --- Hide CC/Subtitles: VideoJS subtitle overlay and settings menu item --- */
-html.pwc-hide-cc .vjs-text-track-display,
-html.pwc-hide-cc .vjs-text-track-settings,
-html.pwc-hide-cc .vjs-setting-subtitles,
-html.pwc-hide-cc .vjs-icon-subtitles {
+
+
+/* --- Hide Note Timeline Sidebar Panel --- */
+html.pwc-hide-notetimeline [class*="timeline-sidebar"],
+html.pwc-hide-notetimeline [id*="timeline-sidebar"],
+html.pwc-hide-notetimeline [class*="Timeline_sidebar"],
+html.pwc-hide-notetimeline [class*="Timeline_container"] {
   display: none !important;
 }
 
@@ -317,6 +319,37 @@ html.pwc-collapsed-state video {
 html.pwc-collapsed-state,
 html.pwc-collapsed-state * {
   cursor: none !important;
+}
+
+/* Picture-in-Picture Button */
+.pwc-pip-btn {
+  height: 100% !important;
+  width: 36px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  z-index: 1000 !important;
+  background: transparent !important;
+  border: none !important;
+  color: rgba(255, 255, 255, 0.75) !important;
+  cursor: pointer !important;
+  transition: color 0.2s ease, transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.25s ease !important;
+  padding: 0 !important;
+  margin: 0 6px !important;
+}
+
+.pwc-pip-btn:hover {
+  color: #ffffff !important;
+  transform: scale(1.15) !important;
+}
+
+.pwc-pip-btn svg {
+  width: 22px !important;
+  height: 22px !important;
+  stroke: currentColor !important;
+  stroke-width: 2.3 !important;
+  fill: none !important;
+  transition: transform 0.2s ease !important;
 }
 
 
