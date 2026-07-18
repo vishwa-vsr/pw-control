@@ -3,6 +3,7 @@ dist/
 backup/
 docs/
 assets/promo-posters/
+assets/skip silence/
 *.zip
 
 # IDE/OS & Temporary files
