@@ -1,7 +1,7 @@
 <div align="center">
   <img src="src/icons/icon128.png" width="96" height="96" alt="PW Control Logo" />
   
-  # ⚡ PW Control
+  #  PW Control
   ### Playback Speed & Focus Extension for Physics Wallah (`pw.live`)
 
   [![Version: 1.0.4](https://img.shields.io/badge/version-1.0.4-blue.svg)](#)
