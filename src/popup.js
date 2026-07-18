@@ -2,7 +2,19 @@ document.addEventListener('DOMContentLoaded', () => {
   // Helper to safely access chrome.storage
   function safeStorageGet(keys, callback) {
     if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
-      chrome.storage.local.get(keys, callback);
+      try {
+        chrome.storage.local.get(keys, (result) => {
+          if (chrome.runtime && chrome.runtime.lastError) {
+            callback({});
+          } else {
+            callback(result || {});
+          }
+        });
+      } catch (err) {
+        callback({});
+      }
+    } else {
+      callback({});
     }
   }
 
@@ -334,13 +346,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   );
 
-  // Fallback: if safeStorageGet didn't call back (no chrome.storage), handle locally
-  if (typeof chrome === 'undefined' || !chrome.storage || !chrome.storage.local) {
-    updateTicksAndPresets(snapPoints);
-    updateSpeedUI(1.0);
-    setTimeout(dismissLoadingOverlay, 150);
-  }
-
   // Save focus toggles changes
   for (const key in toggles) {
     if (toggles[key]) {
@@ -473,9 +478,6 @@ document.addEventListener('DOMContentLoaded', () => {
         safeStorageGet(key, (result) => {
           input.value = result[key] || getDefaultKey(key);
         });
-        if (typeof chrome === 'undefined' || !chrome.storage || !chrome.storage.local) {
-          input.value = getDefaultKey(key);
-        }
       });
 
       // Keypress listener

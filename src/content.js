@@ -45,7 +45,7 @@
   const audioGraphCache = new WeakMap();
   let isSilentStateActive = false;
   let silenceMsCount = 0;
-  let lastSkippedVideo = null;
+  let lastSkippedSrc = '';
   let silenceCheckInterval = null;
   let activeSilenceVideo = null;
   let currentVolumeDb = -100; // Live volume tracking for popup visualizer
@@ -1204,6 +1204,14 @@
     }
 
     activeVideo = video;
+
+    // Reset cached player controls when switching active videos
+    cachedSettingsBtn = null;
+    cachedFullscreenBtn = null;
+    cachedTimeline = null;
+    cachedTimeTexts = null;
+    cachedNativeSpeedBadges = null;
+
     activeVideo.addEventListener('ratechange', onRateChange);
     activeVideo.addEventListener('play', onVideoPlay);
     activeVideo.addEventListener('playing', onVideoPlaying);
@@ -1845,7 +1853,14 @@
 
   function getAudioGraph(video) {
     let cached = audioGraphCache.get(video);
-    if (cached) return cached;
+    if (cached) {
+      // Reconnect the analyser to destination if disconnected
+      try {
+        const ctx = getSharedAudioCtx();
+        cached.analyser.connect(ctx.destination);
+      } catch (e) {}
+      return cached;
+    }
 
     const ctx = getSharedAudioCtx();
     const source   = ctx.createMediaElementSource(video);
@@ -1903,6 +1918,16 @@
       }
     }
 
+    // Disconnect the analyser to stop audio graph processing and allow GC
+    if (activeSilenceVideo) {
+      const graph = audioGraphCache.get(activeSilenceVideo);
+      if (graph && graph.analyser) {
+        try {
+          graph.analyser.disconnect();
+        } catch (e) {}
+      }
+    }
+
     activeSilenceVideo = null;
     silenceMsCount = 0;
     currentVolumeDb = -100;
@@ -1919,7 +1944,13 @@
     const checkIntervalMs = 100;
 
     silenceCheckInterval = setInterval(() => {
-      if (!enableSkipSilence || !video || video.paused || video.ended || video.readyState < 2) {
+      // Stop checking if video element was removed/disconnected from DOM
+      if (!video || !video.isConnected) {
+        cleanupAudioAnalysis();
+        return;
+      }
+
+      if (!enableSkipSilence || video.paused || video.ended || video.readyState < 2) {
         return;
       }
 
@@ -1971,7 +2002,7 @@
 
   // Skip Intro Logic
   function handleSkipIntro(video) {
-    if (!enableSkipSilence || skipIntroTime <= 0 || lastSkippedVideo === video) {
+    if (!enableSkipSilence || skipIntroTime <= 0 || !video.currentSrc || lastSkippedSrc === video.currentSrc) {
       return;
     }
     
@@ -1979,7 +2010,7 @@
       video.currentTime = skipIntroTime;
       showInfoToast("Skipped intro (" + skipIntroTime + "s)");
     }
-    lastSkippedVideo = video;
+    lastSkippedSrc = video.currentSrc;
   }
 
   // Main monitoring function
